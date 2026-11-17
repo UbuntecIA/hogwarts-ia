@@ -1,0 +1,38 @@
+# Credenciales: NUNCA se suben
+.env
+.env.*
+!.env.example
+
+# Estado local del castillo (tokens gastados, tiempos, rutas de tu computador)
+oficina3d/magia.json
+oficina3d/tiempos.json
+
+# Trabajo de cada persona: pedidos y entregas
+pedidos/*
+!pedidos/.gitkeep
+salidas/*
+!salidas/.gitkeep
+
+# Respaldos y ajustes locales de Claude Code
+.claude/respaldo-*/
+.claude/settings.json.respaldo
+.claude/settings.local.json
+.mcp.json
+
+# Íconos/apps generados por crear_app.py
+*.app/
+oficina3d/abrir_oficina.bat
+
+# Datos privados de la empresa: cada quien tiene los suyos (se crean desde las plantillas .ejemplo.md)
+conocimiento/iterhub.md
+configuracion/marca.md
+oficina3d/marca/*
+!oficina3d/marca/LEEME.md
+
+# Sistema y Python
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+.venv/
+node_modules/

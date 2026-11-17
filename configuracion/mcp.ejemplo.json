@@ -1,0 +1,9 @@
+{
+  "_nota": "EJEMPLO. No está activo. Para usarlo, cópialo como .mcp.json en la raíz del proyecto y cambia las URL por las de los servidores MCP reales de cada herramienta.",
+  "mcpServers": {
+    "hubspot": { "type": "http", "url": "https://EJEMPLO-servidor-mcp-hubspot/mcp" },
+    "meta-ads": { "type": "http", "url": "https://EJEMPLO-servidor-mcp-meta-ads/mcp" },
+    "moodle": { "type": "http", "url": "https://EJEMPLO-servidor-mcp-moodle/mcp" },
+    "notion": { "type": "http", "url": "https://mcp.notion.com/mcp" }
+  }
+}

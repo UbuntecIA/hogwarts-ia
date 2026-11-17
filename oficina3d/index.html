@@ -1,0 +1,1631 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hogwarts IA</title>
+<link rel="icon" href="icono/icono_64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --noche: #0B0F1E; --noche2: #151B33; --oro: #D9B45A; --oro2: #F3D98B; --pergamino: #F5ECD7; --pergamino2: #EADBB8;
+    --tinta: #2A1E12; --gris: #6E6250; --linea: #D9C9A3; --vino: #7F1D1D;
+    --sombra: 0 12px 34px rgba(0, 0, 0, .45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--noche); font-family: Inter, system-ui, sans-serif; color: var(--tinta); }
+  canvas#escena { display: block; }
+  button { font: inherit; cursor: pointer; }
+  .cinzel { font-family: Cinzel, Georgia, serif; }
+
+  #cabecera { position: fixed; top: 14px; left: 14px; display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, #1C2340, #10152A); color: var(--pergamino);
+    padding: 9px 16px 9px 12px; border-radius: 14px; box-shadow: var(--sombra); z-index: 5; border: 1px solid rgba(217,180,90,.45); max-width: calc(100vw - 28px); }
+  #escudo { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 22px; background: radial-gradient(circle at 50% 35%, #3A2E5C, #1A1430); border: 1px solid var(--oro); }
+  #cabecera .titulo { font-family: Cinzel, serif; font-weight: 800; font-size: 17px; letter-spacing: 1px; color: var(--oro2); line-height: 1.1; }
+  #cabecera .titulo small { font-family: Inter; font-weight: 500; font-size: 10.5px; letter-spacing: .3px; color: #B9AE95; display: block; }
+  #estado { font-size: 12px; opacity: .95; display: flex; align-items: center; gap: 6px; margin-top: 3px; color: #E9E1CC; }
+  #estado i { width: 8px; height: 8px; border-radius: 50%; background: #8B8FA3; display: inline-block; }
+  #estado.vivo i { background: #3BE39B; } #estado.demo i { background: var(--oro); } #estado.trabajando i { background: var(--oro); animation: latir 1s infinite; }
+  @keyframes latir { 50% { opacity: .3; } }
+
+  #ayuda { position: fixed; top: 82px; left: 14px; z-index: 4; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    background: rgba(16,21,42,.78); backdrop-filter: blur(6px); border-radius: 10px; padding: 6px 10px; font-size: 11px; color: #C9BFA6; border: 1px solid rgba(217,180,90,.2); }
+  #ayuda kbd { font-family: Inter; font-size: 10px; background: #2A3050; border: 1px solid #454C70; border-radius: 4px; padding: 1px 5px; color: #F3E7C8; }
+  #leyenda { position: fixed; left: 14px; top: 116px; z-index: 4; display: flex; gap: 12px; flex-wrap: wrap; max-width: calc(100vw - 28px);
+    background: rgba(16,21,42,.78); backdrop-filter: blur(6px); border-radius: 10px; padding: 7px 12px; font-size: 11px; color: #E9E1CC; border: 1px solid rgba(217,180,90,.2); }
+  #leyenda span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
+  #acciones { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 5; flex-wrap: wrap; justify-content: flex-end; max-width: 64vw; }
+  .chip { background: rgba(28,35,64,.92); border: 1px solid rgba(217,180,90,.45); color: #F3E7C8; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .chip:hover { border-color: var(--oro2); color: #fff; }
+  .chip.on { background: var(--oro); color: #1A1430; border-color: var(--oro); }
+  #bMagia { background: linear-gradient(180deg, #3A2A66, #241A45); }
+  #bMagia b { color: var(--oro2); font-variant-numeric: tabular-nums; }
+
+  #pisos { position: fixed; left: 14px; bottom: 18px; z-index: 4; display: flex; flex-direction: column; gap: 5px; background: rgba(16,21,42,.9); padding: 8px; border-radius: 14px;
+    box-shadow: var(--sombra); border: 1px solid rgba(217,180,90,.35); }
+  #pisos .tit { color: var(--oro2); font: 700 11px Cinzel, serif; letter-spacing: .8px; padding: 0 4px 2px; }
+  #pisos button { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,.04); color: #F3E7C8; border: 1px solid rgba(217,180,90,.18); border-radius: 10px;
+    padding: 6px 10px; font: 600 12px Inter, sans-serif; text-align: left; min-width: 220px; }
+  #pisos button:hover { border-color: var(--oro); }
+  #pisos button b { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(217,180,90,.18); color: var(--oro2); font: 800 13px Cinzel, serif; }
+  #pisos button span { display: flex; flex-direction: column; line-height: 1.2; }
+  #pisos button small { font-weight: 500; font-size: 10.5px; opacity: .7; }
+  #pisos button em { font-style: normal; font-size: 11px; font-weight: 700; margin-left: auto; padding-left: 6px; color: var(--oro2); }
+  #pisos button.on { background: var(--oro); color: #1A1430; border-color: var(--oro); } #pisos button.on b { background: #1A1430; } #pisos button.on em { color: #1A1430; }
+
+  #barra { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(780px, calc(100vw - 28px)); background: var(--pergamino); border-radius: 16px;
+    box-shadow: var(--sombra); padding: 10px; display: flex; gap: 8px; align-items: flex-end; z-index: 5; border: 1px solid var(--oro); }
+  #barra .dumb { flex: none; width: 42px; height: 42px; border-radius: 10px; background-size: cover; background-position: center; background-color: #3A2E5C; }
+  #pedido { flex: 1; resize: none; border: 1px solid var(--linea); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; min-height: 42px; max-height: 120px; outline: none; background: #FFFBF0; color: var(--tinta); }
+  #pedido:focus { border-color: var(--oro); }
+  #modelo { border: 1px solid var(--linea); border-radius: 10px; padding: 0 8px; height: 42px; font: inherit; font-size: 13px; background: #FFFBF0; color: var(--tinta); }
+  .btn { height: 42px; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; font-size: 14px; }
+  .btn.prim { background: #4B2A7B; color: #FFF4D6; } .btn.prim:hover { background: #5E3797; }
+  .btn.amar { background: var(--oro); color: #1A1430; }
+  .btn.sec { background: var(--pergamino2); color: var(--tinta); }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  #etiquetas { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+  .etq { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .etq .nom { pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700;
+    background: rgba(245,236,215,.95); color: var(--tinta); padding: 2px 8px 2px 6px; border-radius: 999px; box-shadow: 0 1px 5px rgba(0,0,0,.5); white-space: nowrap; border: 1px solid rgba(217,180,90,.7); }
+  .etq .mana { width: 46px; height: 4px; border-radius: 3px; background: rgba(20,16,40,.75); overflow: hidden; box-shadow: 0 0 0 1px rgba(217,180,90,.5); }
+  .etq .mana i { display: block; height: 100%; background: linear-gradient(90deg, #7C5CFF, #4FD1FF); transition: width .6s ease; }
+  .etq .mana.baja i { background: linear-gradient(90deg, #F97316, #EF4444); }
+  .etq .bur { display: none; max-width: 210px; font-size: 11px; line-height: 1.3; background: rgba(26,20,48,.95); color: #FFF4D6; padding: 6px 9px; border-radius: 10px; text-align: center; border: 1px solid rgba(217,180,90,.55); }
+  .etq.habla .bur { display: block; }
+  .etq .prog { display: none; position: relative; width: 64px; height: 6px; background: rgba(255,255,255,.8); border-radius: 4px; overflow: hidden; }
+  .etq .prog i { position: absolute; inset: 0 auto 0 0; background: #22C55E; border-radius: 4px; transition: width .8s ease; }
+  .etq .prog.lenta i { background: #F59E0B; }
+  .etq.trabajando .prog { display: block; }
+  .etq .pct { display: none; font-size: 9.5px; font-weight: 700; color: var(--tinta); background: rgba(245,236,215,.9); border-radius: 5px; padding: 0 4px; }
+  .etq.trabajando .pct { display: block; }
+  .etq.lejos .nom { font-size: 9px; padding: 1px 6px 1px 5px; } .etq.lejos .mana { width: 34px; height: 3px; }
+  .chispa { position: fixed; z-index: 3; pointer-events: none; font: 800 12px Inter, sans-serif; color: #C4B5FD; text-shadow: 0 0 6px #7C5CFF, 0 1px 2px #000; transform: translate(-50%, -100%); animation: subir 1.8s ease-out forwards; white-space: nowrap; }
+  @keyframes subir { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -46px; } }
+
+  #panel { position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 100vw); background: var(--pergamino); box-shadow: -10px 0 30px rgba(0,0,0,.45);
+    transform: translateX(105%); transition: transform .25s ease; z-index: 8; display: flex; flex-direction: column; border-left: 2px solid var(--oro); }
+  #panel.abierto { transform: none; }
+  #panel header { padding: 18px 20px 14px; border-bottom: 1px solid var(--linea); display: flex; align-items: flex-start; gap: 12px; background: linear-gradient(180deg, #EFE2C2, var(--pergamino)); }
+  #panel header h2 { margin: 0; font-family: Cinzel, serif; font-size: 21px; }
+  #panel header p { margin: 2px 0 0; color: var(--gris); font-size: 13px; }
+  #cerrar { margin-left: auto; border: 0; background: var(--pergamino2); width: 32px; height: 32px; border-radius: 8px; font-size: 18px; line-height: 1; flex: none; }
+  #panel .cuerpo { padding: 16px 20px 24px; overflow-y: auto; flex: 1; font-size: 14px; line-height: 1.5; }
+  .cuerpo h4 { margin: 18px 0 6px; font-size: 12px; font-family: Cinzel, serif; letter-spacing: .6px; color: #6B4E1F; }
+  .cuerpo ul { margin: 0; padding-left: 18px; }
+  .etiqueta-area { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 6px; }
+  .area-marketing { background: #F6D5D5; color: #7F1D1D; } .area-academia { background: #D8E2F7; color: #1E3A8A; } .area-direccion { background: #E9DDF7; color: #4B2A7B; }
+  .area-tecnologia { background: #D3EBDD; color: #14532D; } .area-produccion { background: #FBEBC0; color: #7A5600; }
+  .avatar { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-family: Cinzel; font-weight: 800; color: #fff; flex: none; background: #4B2A7B; }
+  .foto { width: 88px; height: 88px; border-radius: 18px; flex: none; background-size: cover; background-position: center; box-shadow: inset 0 0 0 2px rgba(217,180,90,.6); }
+  .foto.chica { width: 40px; height: 40px; border-radius: 10px; }
+  .persona { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; cursor: pointer; }
+  .persona:hover { background: #EFE3C6; }
+  .persona b { display: block; font-size: 14px; } .persona small { color: var(--gris); font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .accion { display: block; width: 100%; text-align: left; background: #FBF5E6; border: 1px solid var(--linea); border-radius: 10px; padding: 9px 12px; margin-bottom: 8px; font-size: 13px; color: var(--tinta); }
+  .accion:hover { border-color: var(--oro); background: #FFF8E4; }
+  .accion code { color: #4B2A7B; font-weight: 700; background: none; padding: 0; }
+  .formatos { margin: 0 16px; padding: 10px 12px; background: #FBF5E6; border-radius: 10px; font-size: 13px; border: 1px solid var(--linea); }
+  .formatos b { display: block; margin-bottom: 6px; }
+  .formatos label { display: flex; gap: 8px; align-items: center; margin: 4px 0; cursor: pointer; }
+  .formatos small { color: var(--gris); display: block; margin-top: 6px; }
+  .entrega a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; background: #4B2A7B; color: #FFF4D6; padding: 6px 10px; border-radius: 8px; margin: 0 6px 6px 0; cursor: pointer; text-decoration: none; }
+  details summary { cursor: pointer; color: var(--gris); font-size: 12px; margin: 6px 0; }
+  .estado-ag { background: #FBF5E6; border-radius: 10px; padding: 10px 12px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; border: 1px solid var(--linea); }
+  .magia-caja { background: linear-gradient(135deg, #2A1F52, #18123A); color: #EDE6FF; border-radius: 12px; padding: 12px 14px; margin-top: 10px; border: 1px solid rgba(217,180,90,.5); }
+  .magia-caja .fila { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; }
+  .magia-caja .fila b { font-size: 20px; font-family: Cinzel; color: var(--oro2); }
+  .barra-mana { height: 9px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; margin: 6px 0; }
+  .barra-mana i { display: block; height: 100%; background: linear-gradient(90deg, #7C5CFF, #4FD1FF); }
+  .barra-mana.baja i { background: linear-gradient(90deg, #F97316, #EF4444); }
+  .magia-caja small { color: #B9B0D9; display: block; font-size: 11px; line-height: 1.4; }
+  .fila-magia { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-bottom: 1px solid var(--linea); cursor: pointer; }
+  .fila-magia > div { flex: 1; min-width: 0; } .fila-magia b { font-size: 13px; } .fila-magia small { color: var(--gris); font-size: 11px; }
+  .fila-magia .barra-mana { background: #E2D5B5; margin: 3px 0 0; height: 6px; }
+  .pedido-res { border: 1px solid var(--linea); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; background: #FBF5E6; }
+  .pedido-res h5 { margin: 0 0 6px; font-size: 14px; }
+  .pedido-res .arch { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pedido-res .arch a { font-size: 12px; background: #EFE3C6; color: #4B2A7B; padding: 3px 8px; border-radius: 6px; text-decoration: none; cursor: pointer; }
+  .pedido-res .rep { font-size: 13px; color: var(--gris); white-space: pre-wrap; max-height: 120px; overflow: hidden; }
+  .msg { margin-bottom: 12px; } .msg b { font-size: 12px; color: var(--gris); display: block; }
+  .msg div { background: #FBF5E6; border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; font-size: 13px; border: 1px solid var(--linea); }
+  .msg.yo div { background: #EDE4FA; }
+  .vacio { color: var(--gris); font-size: 13px; }
+  .conv label { display: flex; align-items: center; gap: 8px; padding: 4px 2px; font-size: 13px; cursor: pointer; }
+  .conv .grupos { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .conv .grupos button { background: #FBF5E6; border: 1px solid var(--linea); border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 600; color: var(--tinta); }
+  .conv .grupos button:hover { border-color: var(--oro); }
+  .conv input[type=text], .conv select { width: 100%; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; background: #FFFBF0; }
+  .conv .lista { columns: 2; column-gap: 10px; }
+
+  #tarjeta { position: fixed; top: 70px; max-height: calc(100vh - 170px); left: 50%; transform: translateX(-50%); width: min(660px, calc(100vw - 28px)); background: var(--pergamino); border-radius: 16px;
+    box-shadow: var(--sombra); z-index: 7; display: none; overflow: hidden; flex-direction: column; border: 2px solid var(--oro); }
+  #tarjeta.visible { display: flex; }
+  #tarjeta .cab { flex: none; background: linear-gradient(180deg, #3A2266, #241544); color: #FFF4D6; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  #tarjeta .cab .mini { width: 34px; height: 34px; border-radius: 8px; background-size: cover; background-position: center; background-color: #4B2A7B; flex: none; }
+  #tarjeta .cab b { font-family: Cinzel; font-size: 16px; } #tarjeta .cab span { font-size: 12px; opacity: .85; }
+  #tarjeta .cab button { margin-left: auto; background: transparent; color: #fff; border: 0; font-size: 22px; line-height: 1; cursor: pointer; }
+  #tarjeta .cuerpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+  #tarjeta .txt { padding: 14px 16px; font-size: 14px; line-height: 1.5; }
+  #tarjeta .txt p { margin: 0 0 6px; } #tarjeta .txt ul { margin: 0 0 6px; padding-left: 18px; }
+  #tarjeta textarea { width: calc(100% - 32px); margin: 10px 16px 0; border: 1px solid var(--linea); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13px; resize: vertical; background: #FFFBF0; }
+  #tarjeta .pie { flex: none; display: flex; gap: 8px; padding: 12px 16px 14px; flex-wrap: wrap; border-top: 1px solid var(--linea); }
+
+  #enAccion { position: fixed; left: 14px; top: 160px; width: min(380px, calc(100vw - 28px)); max-height: calc(100vh - 300px); background: var(--pergamino); border-radius: 14px;
+    box-shadow: var(--sombra); z-index: 6; display: none; flex-direction: column; overflow: hidden; border: 1px solid var(--oro); }
+  #enAccion.visible { display: flex; }
+  #enAccion header { flex: none; background: linear-gradient(180deg, #3A2266, #241544); color: #FFF4D6; padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+  #enAccion header b { font-family: Cinzel; font-size: 14px; } #enAccion header span { font-size: 12px; opacity: .85; }
+  #enAccion header button { margin-left: auto; background: transparent; color: #fff; border: 0; font-size: 20px; line-height: 1; cursor: pointer; }
+  #eaCuerpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px 14px 14px; font-size: 13px; }
+  #eaCuerpo h5 { margin: 12px 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); display: flex; align-items: center; gap: 6px; }
+  #eaCuerpo h5 em { font-style: normal; text-transform: none; letter-spacing: 0; background: #EFE3C6; border-radius: 6px; padding: 1px 6px; color: var(--tinta); font-weight: 600; }
+  .ea-dumb { background: #EDE4FA; border-radius: 10px; padding: 8px 10px; line-height: 1.35; }
+  .ea-fila { display: flex; gap: 9px; align-items: flex-start; padding: 6px 4px; border-radius: 10px; cursor: pointer; }
+  .ea-fila:hover { background: #EFE3C6; }
+  .ea-fila .foto.chica, .ea-fila .avatar { width: 32px; height: 32px; border-radius: 9px; flex: none; }
+  .ea-fila > div { min-width: 0; flex: 1; } .ea-fila b { display: block; font-size: 13px; }
+  .ea-fila small { display: block; color: var(--gris); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ea-ola { border: 1px solid var(--linea); border-radius: 12px; padding: 8px 10px; background: #FBF5E6; }
+  .ea-ola.activa { border-color: #22C55E; box-shadow: 0 0 0 2px rgba(34,197,94,.15); }
+  .ea-ola .tit { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px; }
+  .ea-ola .tit small { margin-left: auto; font-weight: 600; color: var(--gris); }
+  .ea-modo { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; }
+  .ea-modo.paralelo { background: #E8F7EE; color: #15803D; } .ea-modo.cascada { background: #FEF3C7; color: #B45309; }
+  .ea-ag { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; cursor: pointer; }
+  .ea-ag i { width: 8px; height: 8px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+  .ea-ag .t { color: var(--gris); } .ea-ag .e { margin-left: auto; font-size: 11px; color: var(--gris); flex: none; }
+  .ea-flecha { text-align: center; color: var(--gris); line-height: 1; margin: 3px 0; }
+  @keyframes eaPulso { 50% { opacity: .35; } } .ea-on { animation: eaPulso 1.2s infinite; }
+  .ea-gen { background: #FBF5E6; border-radius: 12px; padding: 10px 12px; margin-top: 8px; border: 1px solid var(--linea); }
+  .ea-gen .fila1 { display: flex; align-items: baseline; gap: 8px; } .ea-gen .fila1 b { font-size: 22px; font-family: Cinzel; color: #4B2A7B; }
+  .ea-gen .fila1 span { color: var(--gris); font-size: 12px; } .ea-gen .fila1 em { margin-left: auto; font-style: normal; font-weight: 700; font-size: 12px; }
+  .ea-barra { height: 8px; background: #E2D5B5; border-radius: 6px; overflow: hidden; margin: 6px 0 2px; }
+  .ea-barra i { display: block; height: 100%; background: linear-gradient(90deg, #22C55E, #16A34A); border-radius: 6px; transition: width .8s ease; }
+  .ea-barra.lenta i { background: linear-gradient(90deg, #F59E0B, #D97706); } .ea-barra.chica { height: 5px; margin: 4px 0 1px; }
+  .ea-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--gris); }
+  .ea-act { font-size: 11px; color: var(--gris); margin-top: 1px; }
+  .ea-nota { font-size: 11px; color: var(--gris); margin: 10px 0 0; line-height: 1.35; }
+  #nAccion { background: #22C55E; color: #fff; border-radius: 8px; padding: 0 6px; margin-left: 4px; font-size: 11px; } #nAccion:empty { display: none; }
+
+  #visor { position: fixed; inset: 0; background: rgba(5,6,15,.6); z-index: 9; display: none; place-items: center; }
+  #visor.visible { display: grid; }
+  #visor .caja { background: var(--pergamino); width: min(780px, calc(100vw - 28px)); max-height: 84vh; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 2px solid var(--oro); }
+  #visor .caja header { padding: 12px 16px; border-bottom: 1px solid var(--linea); display: flex; align-items: center; font-weight: 700; }
+  #visor .caja header button { margin-left: auto; }
+  #visor .caja .doc { padding: 16px 20px; overflow-y: auto; font-size: 14px; line-height: 1.55; }
+  .doc pre { white-space: pre-wrap; background: #FBF5E6; padding: 8px; border-radius: 8px; }
+  .doc code { background: #EFE3C6; padding: 1px 4px; border-radius: 4px; }
+
+  #cargando { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20; background: radial-gradient(circle at 50% 40%, #1C2340, #070A16); font-family: Cinzel; font-weight: 700; font-size: 20px; color: var(--oro2); transition: opacity .6s; letter-spacing: 1px; }
+
+  @media (max-width: 1280px) { #pisos { bottom: 96px; } }
+  @media (max-width: 760px) {
+    #cabecera .titulo small { display: none; } #acciones { top: 72px; max-width: calc(100vw - 28px); justify-content: flex-start; left: 14px; right: auto; }
+    #ayuda, #leyenda { display: none; } #modelo { width: 80px; } #barra .dumb { display: none; }
+    #pisos button { min-width: 0; } #pisos button span { display: none; } #pisos { bottom: 92px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }
+</script>
+<script src="equipo.js"></script>
+</head>
+<body>
+<div id="cargando">Abriendo las puertas del castillo…</div>
+<canvas id="escena"></canvas>
+<div id="etiquetas"></div>
+
+<div id="cabecera">
+  <div id="escudo">🏰</div>
+  <div>
+    <div class="titulo">Hogwarts IA<small>Oficina de agentes de ITERHUB</small></div>
+    <div id="estado"><i></i><span>Conectando…</span></div>
+  </div>
+</div>
+<div id="ayuda"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> moverte · <kbd>Q</kbd><kbd>E</kbd> girar · <kbd>Rueda</kbd> zoom · <kbd>Arrastrar</kbd> rotar · <kbd>Clic</kbd> perfil o sala · <kbd>0</kbd>–<kbd>4</kbd> pisos · <kbd>C</kbd> castillo completo</div>
+<div id="leyenda">
+  <span><i class="punto" style="background:#22C55E"></i>Lanzando hechizos (trabajando)</span>
+  <span><i class="punto" style="background:#F59E0B"></i>Esperando tu respuesta</span>
+  <span><i class="punto" style="background:#A855F7"></i>En reunión</span>
+  <span><i class="punto" style="background:#3B82F6"></i>Caminando</span>
+  <span><i class="punto" style="background:#14B8A6"></i>Paseando por Hogwarts</span>
+</div>
+
+<div id="acciones">
+  <button class="chip" id="bMagia" title="Puntos de magia (tokens) que gasta cada agente">✨ Magia hoy: <b id="magiaHoy">0</b> PM</button>
+  <button class="chip" id="bEnAccion" title="Quién está trabajando, en qué y en qué orden">🪄 En acción<span id="nAccion"></span></button>
+  <button class="chip" id="bReunion" title="Reúne a los agentes por tarea">🕯 Convocar reunión</button>
+  <button class="chip" id="bElenco">📜 Elenco</button>
+  <button class="chip" id="bSalidas" title="Solo lo final de cada pedido, por tema">📦 Salidas</button>
+  <button class="chip" id="bResultados">Pedidos</button>
+  <button class="chip" id="bConversacion">Conversación</button>
+  <button class="chip" id="bGiro">Giro 360°</button>
+  <button class="chip" id="bDemo" title="Simula un pedido sin gastar magia">Ver demo</button>
+</div>
+
+<div id="pisos" aria-label="Pisos del castillo">
+  <div class="tit">PISOS DEL CASTILLO</div>
+  <button id="bTodo" class="on"><b>✦</b><span>Castillo completo<small>Ver los cinco pisos</small></span><em id="nTodo"></em></button>
+</div>
+
+<div id="tarjeta">
+  <div class="cab"><div class="mini" id="tarjetaFoto"></div><b>Dumbledore</b><span id="tarjetaSub">Director de Hogwarts IA</span><button id="tarjetaCerrar" aria-label="Cerrar">×</button></div>
+  <div class="cuerpo" id="tarjetaCuerpo">
+    <div class="txt" id="tarjetaTxt"></div>
+    <div class="formatos" id="nivelesBox" style="margin-bottom:10px"></div>
+    <div class="formatos" id="formatos">
+      <b>¿Necesitas algo más además de los documentos?</b>
+      <label><input type="checkbox" id="fPpt"> Presentación PPT</label>
+      <label><input type="checkbox" id="fWord"> Documento Word</label>
+      <label><input type="checkbox" id="fJson"> JSON para construirlo en otra IA</label>
+      <small>Siempre recibes un RESUMEN.md y tus salidas finales en salidas/&lt;tema&gt;/ (las ves en 📦 Salidas). Las imágenes de la PPT las generan tus agentes de ChatGPT con los prompts de Tonks.</small>
+    </div>
+    <div class="formatos" id="opcionales" style="margin-top:10px;display:none"><b>Opcionales (solo si los quieres)</b><div id="opcionalesLista"></div></div>
+    <textarea id="ajustes" rows="2" placeholder="¿Quieres ajustar algo? Escríbelo aquí (opcional)"></textarea>
+    <textarea id="respuestas" rows="6" style="display:none" placeholder="Escribe tus respuestas aquí, una por línea (1. … 2. …). Si en alguna prefieres que Dumbledore decida, escribe «decide tú»."></textarea>
+  </div>
+  <div class="pie" id="tarjetaPie"></div>
+</div>
+
+<div id="enAccion" aria-label="Equipo en acción">
+  <header><b>🪄 Equipo en acción</b><span id="eaSub"></span><button id="eaCerrar" aria-label="Cerrar">×</button></header>
+  <div id="eaCuerpo"></div>
+</div>
+
+<div id="panel" aria-hidden="true">
+  <header><div id="panelIcono"></div><div><h2 id="panelTitulo"></h2><p id="panelSub"></p><div id="panelArea"></div></div><button id="cerrar" aria-label="Cerrar">×</button></header>
+  <div class="cuerpo" id="panelCuerpo"></div>
+</div>
+
+<div id="visor"><div class="caja"><header><span id="visorTitulo"></span><button class="btn sec" id="visorCerrar">Cerrar</button></header><div class="doc" id="visorDoc"></div></div></div>
+
+<form id="barra">
+  <div class="dumb" id="barraFoto" title="Dumbledore"></div>
+  <textarea id="pedido" rows="1" placeholder="Háblale a Dumbledore. Ej: /programa una landing para el webinar · /video reel de 30 s sobre agentes de IA"></textarea>
+  <select id="modelo" title="Modelo de los agentes">
+    <option value="haiku">Haiku · básico</option>
+    <option value="sonnet">Sonnet · profesional</option>
+    <option value="opus">Opus · experto</option>
+  </select>
+  <button class="btn prim" id="bEnviar" type="submit">Enviar</button>
+  <button class="btn sec" id="bDetener" type="button" disabled>Detener</button>
+</form>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = s => document.querySelector(s);
+const EQ = window.EQUIPO || [];
+const POR_SLUG = Object.fromEntries(EQ.map(a => [a.slug, a]));
+const AREA_TXT = { marketing: 'Marketing', academia: 'Academia', direccion: 'Dirección', tecnologia: 'Tecnología', produccion: 'Producción' };
+const ESTADOS = { pensando: 'Pensando', leyendo: 'Leyendo', escribiendo: 'Escribiendo', buscando: 'Buscando en la web', ejecutando: 'Ejecutando',
+  delegando: 'Repartiendo misiones', revisando: 'Revisando', esperando: 'Esperando tu respuesta', llegando: 'Llegando a su puesto', terminado: 'Terminó', error: 'Tuvo un error' };
+const PUNTO = { trabaja: ['#22C55E', 'Lanzando hechizos'], espera: ['#F59E0B', 'Esperando tu respuesta'], reunion: ['#A855F7', 'En reunión'],
+  camina: ['#3B82F6', 'Caminando'], pausa: ['#14B8A6', 'Paseando por Hogwarts'], puesto: ['#94A3B8', 'En su puesto'], error: ['#EF4444', 'Tuvo un error'] };
+const RESPUESTA = { 'revision-editorial': 'Lo revisaré con lupa, Albus.', 'abogado-diablo': 'Encontraré cada debilidad…', guardabosques: 'Yo me encargo, profesor.',
+  'estratega-marca': 'Cuenta conmigo, profesor.', 'investigacion-audiencias': 'Qué misión tan interesante.', copywriter: '¡Esto va a quedar brillante!',
+  'contenido-web': 'Yo escribo, Fred presume.', 'redes-sociales': 'A la cancha.', 'pauta-digital': 'Jaque en tres jugadas.', 'diseno-instruccional': 'Empecemos por lo esencial.',
+  'investigacion-tematica': '¡Ya tengo tres libros sobre eso!', 'lecciones-guiones': 'La escribo con calma.', 'laboratorios-ia': '¡Manos a la varita!',
+  'material-clase': 'A sembrar se dijo.', 'direccion-arte': 'Le cambio la cara a esto.', 'diseno-grafico': 'Ya tengo el boceto en la cabeza.',
+  'produccion-video': '¡Luces, cámara…!', 'tareas-rapidas': '¡Dobby lo hará, señor!', 'arquitectura-software': '…Si no hay más remedio.',
+  'desarrollo-frontend': 'Quedará impecable, obviamente.', 'desarrollo-backend': 'Bóveda asegurada.', 'pruebas-qa': 'Lo probaré todo, lo prometo.',
+  automatizaciones: '¡Fascinante! ¿Cómo se conecta esto?' };
+
+// ================================================================== motor
+const lienzo = $('#escena');
+const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true });
+render.setPixelRatio(Math.min(devicePixelRatio, 2));
+render.setSize(innerWidth, innerHeight);
+render.shadowMap.enabled = true;
+render.shadowMap.type = THREE.PCFSoftShadowMap;
+render.outputColorSpace = THREE.SRGBColorSpace;
+render.toneMapping = THREE.ACESFilmicToneMapping; render.toneMappingExposure = 1.4;
+
+const escena = new THREE.Scene();
+const MEDIO = 30;
+const camara = new THREE.OrthographicCamera(-MEDIO * innerWidth / innerHeight, MEDIO * innerWidth / innerHeight, MEDIO, -MEDIO, -200, 600);
+const controles = new OrbitControls(camara, lienzo);
+controles.enableDamping = true; controles.maxPolarAngle = 1.45; controles.minZoom = 0.45; controles.maxZoom = 7; controles.zoomToCursor = true; controles.autoRotateSpeed = 0.8;
+
+// cielo nocturno con degradado
+escena.background = (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 512; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, '#05060F'); gr.addColorStop(0.55, '#121A3A'); gr.addColorStop(1, '#2B2450');
+  g.fillStyle = gr; g.fillRect(0, 0, 4, 512); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+
+escena.add(new THREE.HemisphereLight(0x8090C8, 0x2A2016, 1.1));
+escena.add(new THREE.AmbientLight(0x30284A, 0.6));
+const luna = new THREE.DirectionalLight(0xB8C6FF, 1.6);
+luna.position.set(-40, 70, 30); luna.castShadow = true; luna.shadow.mapSize.set(2048, 2048);
+Object.assign(luna.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 220 }); luna.shadow.bias = -0.0005; luna.shadow.normalBias = 0.03;
+luna.target.position.set(0, 10, -32); escena.add(luna, luna.target);
+const calido = new THREE.DirectionalLight(0xFFC27A, 0.9); calido.position.set(20, 30, 60); calido.target.position.set(0, 8, -32); escena.add(calido, calido.target);
+
+// ================================================================== utilidades
+const mats = {};
+function mat(color, extra = {}) { const k = color + JSON.stringify(extra); return mats[k] || (mats[k] = new THREE.MeshLambertMaterial({ color, ...extra })); }
+function caja(w, h, d, color, x = 0, y = 0, z = 0, padre = escena, sombra = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), color instanceof THREE.Material ? color : mat(color)); m.position.set(x, y, z);
+  m.castShadow = sombra; m.receiveShadow = true; padre.add(m); return m; }
+function cil(rt, rb, h, color, x = 0, y = 0, z = 0, padre = escena, seg = 16) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), color instanceof THREE.Material ? color : mat(color)); m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true; padre.add(m); return m; }
+function esfera(r, color, x = 0, y = 0, z = 0, padre = escena, seg = 16) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.max(8, seg * 0.6 | 0)), color instanceof THREE.Material ? color : mat(color)); m.position.set(x, y, z);
+  m.castShadow = true; padre.add(m); return m; }
+function cono(r, h, color, x = 0, y = 0, z = 0, padre = escena, seg = 16) {
+  const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), color instanceof THREE.Material ? color : mat(color)); m.position.set(x, y, z); m.castShadow = true; padre.add(m); return m; }
+function lienzoTex(w, h, dibujar, rep) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; dibujar(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); } return t; }
+function plano(w, h, material, x, y, z, ry = 0, padre = escena) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material); m.position.set(x, y, z); m.rotation.y = ry; padre.add(m); return m; }
+function suelo(x0, x1, z0, z1, material, y = 0.02, padre) { const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), material); m.rotation.x = -Math.PI / 2;
+  m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2); m.receiveShadow = true; padre.add(m); return m; }
+function ruido(g, w, h, n, colores, tam = 2) { for (let i = 0; i < n; i++) { g.fillStyle = colores[i % colores.length]; g.fillRect(Math.random() * w, Math.random() * h, tam, tam); } }
+const TEX = {
+  muro: lienzoTex(256, 256, (g) => { g.fillStyle = '#6E6658'; g.fillRect(0, 0, 256, 256); ruido(g, 256, 256, 3000, ['#5D5649', '#7D7465', '#665E51', '#857C6C']);
+    g.strokeStyle = '#4A443A'; g.lineWidth = 3; for (let y = 0; y < 256; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke();
+      for (let x = (y / 32) % 2 ? 0 : 32; x < 256; x += 64) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 32); g.stroke(); } } }, [1, 1]),
+  losa: lienzoTex(256, 256, (g) => { g.fillStyle = '#5E584E'; g.fillRect(0, 0, 256, 256); ruido(g, 256, 256, 2500, ['#544E45', '#6B6458', '#625B50']);
+    g.strokeStyle = '#3E3A33'; g.lineWidth = 4; for (let i = 0; i <= 256; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 256); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(256, i); g.stroke(); } }, [1, 1]),
+  madera: lienzoTex(256, 256, (g) => { g.fillStyle = '#5A3A22'; g.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 32) { g.fillStyle = y % 64 ? '#62402A' : '#563620'; g.fillRect(0, y, 256, 30); g.fillStyle = '#3C2616'; g.fillRect(0, y + 30, 256, 2); }
+    ruido(g, 256, 256, 1200, ['#4B2F1C', '#6E4A31'], 3); }, [1, 1]),
+  roca: lienzoTex(256, 256, (g) => { g.fillStyle = '#4D4740'; g.fillRect(0, 0, 256, 256); ruido(g, 256, 256, 5000, ['#3F3A34', '#5A534B', '#47423B', '#635B52'], 3);
+    g.strokeStyle = 'rgba(30,26,22,.6)'; g.lineWidth = 2; for (let i = 0; i < 14; i++) { g.beginPath(); let x = Math.random() * 256, y = Math.random() * 256; g.moveTo(x, y);
+      for (let k = 0; k < 4; k++) { x += (Math.random() - .5) * 60; y += Math.random() * 40; g.lineTo(x, y); } g.stroke(); } }, [1, 1]),
+  cesped: lienzoTex(256, 256, (g) => { g.fillStyle = '#2B4A30'; g.fillRect(0, 0, 256, 256); ruido(g, 256, 256, 6000, ['#33583A', '#264229', '#3B6342', '#21391F'], 3); }, [30, 30]),
+};
+function texRep(base, rx, rz) { const t = base.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, rz); return t; }
+function alfombraTex(fondo, borde) { return lienzoTex(256, 256, g => { g.fillStyle = borde; g.fillRect(0, 0, 256, 256); g.fillStyle = fondo; g.fillRect(14, 14, 228, 228);
+  g.strokeStyle = borde; g.lineWidth = 3; g.strokeRect(30, 30, 196, 196); ruido(g, 256, 256, 1500, ['rgba(0,0,0,.12)', 'rgba(255,255,255,.05)']); }); }
+function texto(txt, ancho, alto, opciones = {}) {
+  const { color = '#F3D98B', fondo = null, fuente = '700 64px Cinzel, Georgia, serif', borde = null } = opciones;
+  return lienzoTex(ancho, alto, g => { if (fondo) { g.fillStyle = fondo; g.fillRect(0, 0, ancho, alto); if (borde) { g.strokeStyle = borde; g.lineWidth = 6; g.strokeRect(6, 6, ancho - 12, alto - 12); } }
+    g.font = fuente; g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle';
+    let f = parseInt(fuente.match(/(\d+)px/)[1]); while (g.measureText(txt).width > ancho * 0.9 && f > 10) { f -= 2; g.font = fuente.replace(/\d+px/, f + 'px'); }
+    g.fillText(txt, ancho / 2, alto / 2 + 2); });
+}
+
+const LIBROS_FLOTANTES = [];
+// ================================================================== geometría del castillo
+const ALT = 6, PROF = 16, MX = 17.6, ESCX = 18.7;   // cada piso sube 6 m y queda 16 m más atrás (terrazas sobre el acantilado)
+const baseY = p => p * ALT, baseZ = p => -p * PROF;
+const mundo = (p, x, z, y = 0) => new THREE.Vector3(x, baseY(p) + y, baseZ(p) + z);
+const PISOS = [
+  { n: 0, nombre: 'Mazmorras', sub: 'Laboratorio de Código · Cámara · Cocinas' },
+  { n: 1, nombre: 'Planta baja', sub: 'Gran Comedor · Biblioteca · Vestíbulo' },
+  { n: 2, nombre: 'Aulas y salas comunes', sub: 'Gryffindor · Defensa · Encantamientos · Invernadero' },
+  { n: 3, nombre: 'Torre de Arte', sub: 'Estudio de arte y cámaras · Sala de los Menesteres' },
+  { n: 4, nombre: 'Torres altas', sub: 'Despacho del Director · Lechucería · Astronomía' },
+];
+const PISO = PISOS.map(P => { const g = new THREE.Group(); g.position.set(0, baseY(P.n), baseZ(P.n)); escena.add(g); return g; });
+
+// salas: x0..x1 en coordenadas del piso, de z -8 (muro del fondo) a 5.3 (baranda de la galería)
+const PEDIR = t => `<button class="accion" data-pedido="${esc(t)}"><code>${esc(t.split(' ')[0])}</code> ${esc(t.split(' ').slice(1).join(' '))}</button>`;
+const SALAS = [
+  { id: 'pociones', piso: 0, x0: -MX, x1: 3, nombre: 'Aula de Pociones · Laboratorio de Código', area: 'tecnologia', suelo: 'losa',
+    desc: 'En las mazmorras, entre calderos y espejos que muestran código, Snape dirige el Laboratorio de Código: arquitectura, interfaces, APIs, automatizaciones y pruebas. Aquí se programa lo que pidas: landings, apps, paneles, scripts e integraciones. Todo queda en salidas/<tema>/ y nada se publica sin tu aprobación.',
+    acciones: ['/programa una landing con formulario de inscripción para el webinar', '/programa un panel para ver los inscritos del curso desde un CSV', '/programa una automatización que pase los leads del formulario a una hoja de cálculo'] },
+  { id: 'cocinas', piso: 0, x0: 3, x1: 9, nombre: 'Cocinas', area: 'produccion', suelo: 'losa',
+    desc: 'Donde trabaja Dobby, el elfo de tareas rápidas: ajustes pequeños, conversiones a Word o PPT, ordenar carpetas y regenerar presentaciones cuando llegan las imágenes.',
+    acciones: ['/pedido que Dobby convierta el último documento a Word', '/pedido ya puse las imágenes: regenera la PPT'] },
+  { id: 'camara', piso: 0, x0: 9, x1: MX, nombre: 'Cámara de los Secretos', area: 'direccion', suelo: 'losa', secreta: true,
+    desc: 'La guarida de Voldemort, el abogado del diablo. Ataca cada estrategia, curso o código como lo haría el cliente más difícil y propone cómo blindarlo. Asiste a todas las reuniones de ideas.',
+    acciones: ['/pedido que Voldemort ataque la última estrategia y proponga cómo blindarla'] },
+  { id: 'comedor', piso: 1, x0: -MX, x1: -1, nombre: 'Gran Comedor', area: 'direccion', suelo: 'losa', reunion: true,
+    desc: 'Mesas largas, estandartes y cientos de velas flotando bajo un techo encantado. Aquí se reúne todo el castillo cuando convocas una reunión grande.',
+    acciones: [] },
+  { id: 'biblioteca', piso: 1, x0: -1, x1: 11, nombre: 'Biblioteca', area: 'academia', suelo: 'madera',
+    desc: 'Hermione investiga aquí cada curso con fuentes reales, casos y bibliografía APA, y Cho escribe los documentos y lecturas cuando se piden.',
+    acciones: ['/curso definición de mercado para emprendimientos de TI, maestría, 2 horas', '/pedido investigación sobre adopción de IA en pymes colombianas con fuentes'] },
+  { id: 'vestibulo', piso: 1, x0: 11, x1: MX, nombre: 'Vestíbulo', area: 'direccion', suelo: 'losa', salidas: true,
+    desc: 'La entrada al castillo. Hagrid guarda aquí las llaves y empaca cada entrega: verifica los archivos de salidas/ y escribe el paquete para otros agentes. Los relojes de arena muestran la magia que queda en el castillo hoy.',
+    acciones: [], botones: true },
+  { id: 'gryffindor', piso: 2, x0: -MX, x1: -3, nombre: 'Sala común de Gryffindor · Marketing', area: 'marketing', suelo: 'alfombraRoja',
+    desc: 'Junto a la chimenea trabaja el equipo de Marketing: Harry (estrategia), Ron (pauta en Meta), Fred (copys), George (contenido largo y SEO) y Ginny (redes y WhatsApp). Luna investiga el mercado desde la Torre de Astronomía.',
+    acciones: ['/campana lanzamiento del curso de agentes de IA para pymes', '/estrategia crecimiento de la academia en 2027', '/pieza post de LinkedIn sobre agentes de IA para pymes, 3 variantes', '/contenido artículo de blog sobre IA en ventas para pymes'] },
+  { id: 'defensa', piso: 2, x0: -3, x1: 5, nombre: 'Aula de Defensa · Diseño de cursos', area: 'academia', suelo: 'madera',
+    desc: 'Lupin diseña aquí cada curso, clase o taller y escribe el contenido real de cada diapositiva con las notas del docente.',
+    acciones: ['/curso prompting para equipos de ventas, 4 horas', '/taller validación de clientes con IA, 3 horas, equipos de ventas'] },
+  { id: 'encantamientos', piso: 2, x0: 5, x1: 11, nombre: 'Aula de Encantamientos · Talleres', area: 'academia', suelo: 'madera',
+    desc: 'Flitwick diseña talleres prácticos, ejercicios, rúbricas y quiz, solo cuando los pides.', acciones: [] },
+  { id: 'invernadero', piso: 2, x0: 11, x1: MX, nombre: 'Invernadero · Material de clase', area: 'academia', suelo: 'tierra',
+    desc: 'Sprout cultiva el material: convierte el guion de Lupin en la PPT final y el Word sin recortar nada.', acciones: [] },
+  { id: 'arte', piso: 3, x0: -MX, x1: -1, nombre: 'Estudio de Arte y Cámaras · Producción', area: 'produccion', suelo: 'madera',
+    desc: 'Tonks (dirección de arte e imágenes), Dean (PPT, Word y piezas gráficas) y Colin (video: guiones, storyboard, prompts para IAs de video y edición con ffmpeg).',
+    acciones: ['/video reel de 30 s sobre agentes de IA para pymes', '/videos-cortos 5 videos para TikTok sobre IA en ventas', '/presentacion propuesta de servicios de IA para un cliente, 20 minutos'] },
+  { id: 'menesteres', piso: 3, x0: -1, x1: MX, nombre: 'Sala de los Menesteres', area: 'direccion', suelo: 'alfombraMorada', reunion: true,
+    desc: 'La sala que aparece cuando la necesitas: aquí se reúnen los agentes por tarea alrededor de la mesa redonda. Convoca a un equipo (programación, marketing, academia, video…) solo para verlos juntos o para una lluvia de ideas con acta priorizada.',
+    acciones: ['/reunion cómo conseguir 200 inscritos para el webinar sin pauta paga', '/reunion ideas para un nuevo curso de IA para equipos de ventas'], convocar: true },
+  { id: 'despacho', piso: 4, x0: -MX, x1: -3, nombre: 'Despacho del Director', area: 'direccion', suelo: 'alfombraMorada',
+    desc: 'Dumbledore, el único con quien hablas: te pregunta primero lo que cambia el resultado, propone un solo entregable, arma el equipo mínimo, se aparece junto a cada agente para darle su misión y al final te entrega todo integrado.',
+    acciones: ['/pedido presentación para un cliente sobre IA en ventas, 20 minutos'] },
+  { id: 'mcgonagall', piso: 4, x0: -3, x1: 5, nombre: 'Despacho de McGonagall · Calidad', area: 'direccion', suelo: 'alfombraVerde',
+    desc: 'Nada sale del castillo sin pasar por aquí: McGonagall comprueba que sea exactamente lo que pediste, abre las fuentes y bloquea cualquier dato inventado.', acciones: [] },
+  { id: 'lechuceria', piso: 4, x0: 5, x1: 10, nombre: 'Lechucería', area: 'direccion', suelo: 'losa',
+    desc: 'De aquí salen las lechuzas que llevan cada misión de Dumbledore a los agentes, y las que traen sus entregas de vuelta.', acciones: [] },
+  { id: 'astronomia', piso: 4, x0: 10, x1: MX, nombre: 'Torre de Astronomía · Investigación de mercado', area: 'marketing', suelo: 'losa',
+    desc: 'Luna rastrea mercados, competidores, audiencias y tendencias con fuentes reales, mirando más lejos que nadie.', acciones: [] },
+];
+const SALA = Object.fromEntries(SALAS.map(s => [s.id, s]));
+SALAS.forEach(s => { s.puerta = s.puerta ?? (s.x0 + s.x1) / 2; });
+
+const TEXS_SUELO = {
+  losa: (w, d) => new THREE.MeshLambertMaterial({ map: texRep(TEX.losa, w / 4, d / 4) }),
+  madera: (w, d) => new THREE.MeshLambertMaterial({ map: texRep(TEX.madera, w / 4, d / 4) }),
+  tierra: (w, d) => new THREE.MeshLambertMaterial({ map: lienzoTex(256, 256, g => { g.fillStyle = '#3B2A1A'; g.fillRect(0, 0, 256, 256); ruido(g, 256, 256, 4000, ['#4A3522', '#2F2014', '#3E5A2A'], 3); }) }),
+  alfombraRoja: () => new THREE.MeshLambertMaterial({ map: alfombraTex('#7A1F1F', '#C9A227') }),
+  alfombraMorada: () => new THREE.MeshLambertMaterial({ map: alfombraTex('#3E2463', '#C9A227') }),
+  alfombraVerde: () => new THREE.MeshLambertMaterial({ map: alfombraTex('#1F4A33', '#C9A227') }),
+};
+const pisosClic = [];   // mallas de suelo de cada sala, para saber qué sala tocaste
+const MAT_MURO = new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, 1, 1) });
+function muroX(p, x0, x1, z, alto, grosor = 0.35, mat = null) { const w = x1 - x0; const m = caja(w, alto, grosor, mat || new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, w / 3, alto / 3) }), (x0 + x1) / 2, alto / 2, z, PISO[p]); return m; }
+function muroZ(p, z0, z1, x, alto, grosor = 0.35) { const d = z1 - z0; return caja(grosor, alto, d, new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, d / 3, alto / 3) }), x, alto / 2, (z0 + z1) / 2, PISO[p]); }
+
+// ---------- velas flotantes (cuerpos instanciados + llamas en un shader)
+const VELAS = [];   // {x,y,z,f}
+const LLAMAS = [];  // {x,y,z,f,t}  (t: tamaño)
+function vela(x, y, z, flota = true) { VELAS.push({ x, y, z, f: Math.random() * 6.28, flota }); LLAMAS.push({ x, y: y + 0.19, z, f: Math.random() * 6.28, t: 1, flota }); }
+function llama(x, y, z, t = 1.6) { LLAMAS.push({ x, y, z, f: Math.random() * 6.28, t, flota: false }); }
+function velasSobre(p, x0, x1, z0, z1, n, y0 = 2.7, y1 = 3.7) { for (let i = 0; i < n; i++) { const w = mundo(p, x0 + Math.random() * (x1 - x0), z0 + Math.random() * (z1 - z0), y0 + Math.random() * (y1 - y0)); vela(w.x, w.y, w.z); } }
+function antorcha(p, x, z, y = 2.6, haciaZ = 1) { const g = PISO[p]; caja(0.08, 0.3, 0.12, 0x2B2118, x, y - 0.1, z + 0.08 * haciaZ, g, false); cil(0.06, 0.04, 0.22, 0x5A3A22, x, y + 0.08, z + 0.2 * haciaZ, g, 8);
+  const w = mundo(p, x, z + 0.2 * haciaZ, y + 0.3); llama(w.x, w.y, w.z, 2.6); }
+
+// ---------- partículas (chispas de hechizos, humo de aparición y polvos flu)
+const MAX_P = 900;
+const P_POS = new Float32Array(MAX_P * 3), P_COL = new Float32Array(MAX_P * 3), P_TAM = new Float32Array(MAX_P), P_VIDA = new Float32Array(MAX_P);
+const P_VEL = new Float32Array(MAX_P * 3), P_MAX = new Float32Array(MAX_P); let pSig = 0;
+const geoP = new THREE.BufferGeometry();
+geoP.setAttribute('position', new THREE.BufferAttribute(P_POS, 3)); geoP.setAttribute('color', new THREE.BufferAttribute(P_COL, 3)); geoP.setAttribute('tam', new THREE.BufferAttribute(P_TAM, 1));
+const matP = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { escala: { value: 1 } },
+  vertexShader: `uniform float escala; attribute float tam; attribute vec3 color; varying vec3 vC; void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mv; gl_PointSize = tam * escala; }`,
+  fragmentShader: `varying vec3 vC; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vC * a * 1.6, a); }` });
+const particulas = new THREE.Points(geoP, matP); particulas.frustumCulled = false; escena.add(particulas);
+function chispa(pos, color, vel = [0, 0.6, 0], tam = 7, vida = 1, dispersion = 0.25) {
+  const i = pSig; pSig = (pSig + 1) % MAX_P; const c = new THREE.Color(color);
+  P_POS[i * 3] = pos.x + (Math.random() - .5) * dispersion; P_POS[i * 3 + 1] = pos.y + (Math.random() - .5) * dispersion; P_POS[i * 3 + 2] = pos.z + (Math.random() - .5) * dispersion;
+  P_VEL[i * 3] = vel[0] + (Math.random() - .5) * 0.5; P_VEL[i * 3 + 1] = vel[1] + Math.random() * 0.3; P_VEL[i * 3 + 2] = vel[2] + (Math.random() - .5) * 0.5;
+  P_COL[i * 3] = c.r; P_COL[i * 3 + 1] = c.g; P_COL[i * 3 + 2] = c.b; P_TAM[i] = tam; P_VIDA[i] = vida; P_MAX[i] = vida;
+}
+function nube(pos, color, n = 40, tam = 22) { for (let i = 0; i < n; i++) chispa(pos, color, [(Math.random() - .5) * 1.6, 0.4 + Math.random() * 1.4, (Math.random() - .5) * 1.6], tam * (0.6 + Math.random() * 0.8), 0.9 + Math.random() * 0.6, 0.7); }
+function animarParticulas(dt) {
+  for (let i = 0; i < MAX_P; i++) { if (P_VIDA[i] <= 0) { P_TAM[i] = 0; continue; }
+    P_VIDA[i] -= dt; const k = Math.max(0, P_VIDA[i] / P_MAX[i]);
+    P_POS[i * 3] += P_VEL[i * 3] * dt; P_POS[i * 3 + 1] += P_VEL[i * 3 + 1] * dt; P_POS[i * 3 + 2] += P_VEL[i * 3 + 2] * dt;
+    P_VEL[i * 3] *= 0.97; P_VEL[i * 3 + 2] *= 0.97; P_TAM[i] *= 0.995; if (k < 0.3) P_TAM[i] *= 0.93; }
+  geoP.attributes.position.needsUpdate = geoP.attributes.color.needsUpdate = geoP.attributes.tam.needsUpdate = true;
+}
+
+// ================================================================== construcción
+function construirPiso(P) {
+  const p = P.n, g = PISO[p];
+  // losa y roca del acantilado bajo el piso
+  caja(2 * MX + 0.6, 0.4, 16.4, new THREE.MeshLambertMaterial({ map: texRep(TEX.losa, 9, 4) }), 0, -0.2, 0, g, false);
+  if (p > 0) { const r = caja(2 * MX + 0.6, ALT - 0.4, 16.4, new THREE.MeshLambertMaterial({ map: texRep(TEX.roca, 6, 1.2) }), 0, -0.4 - (ALT - 0.4) / 2, 0, g, false); r.castShadow = false;
+    for (let i = 0; i < 9; i++) { const x = -15 + i * 3.75 + (Math.random() - .5); const v = plano(0.5, 0.8, new THREE.MeshBasicMaterial({ color: 0xFFC46B }), x, -ALT / 2 + (Math.random() - .5) * 1.6, 8.22, 0, g); v.material.toneMapped = false; } }
+  // galería delantera con baranda y faroles
+  suelo(-MX, MX, 5.3, 8.1, new THREE.MeshLambertMaterial({ map: texRep(TEX.losa, 9, 1) }), 0.015, g);
+  caja(2 * MX, 0.12, 0.22, 0x55504A, 0, 0.92, 7.95, g, false);
+  for (let x = -MX + 0.2; x <= MX; x += 1.2) caja(0.12, 0.9, 0.12, 0x5F594F, x, 0.45, 7.95, g, false);
+  for (let x = -15; x <= 15; x += 6) { const w = mundo(p, x, 7.95, 1.35); cil(0.03, 0.03, 0.4, 0x2B2118, x, 1.1, 7.95, g, 6); llama(w.x, w.y, w.z, 2.2); }
+  // letrero del piso, tallado en la baranda
+  const letrero = plano(7, 0.7, new THREE.MeshBasicMaterial({ map: texto(`${P.n} · ${P.nombre.toUpperCase()}`, 1024, 100, { color: '#F3D98B', fondo: '#241A12', borde: '#C9A227' }), toneMapped: false }), -11, 0.45, 8.1, 0, g);
+  // muro del fondo con ventanas góticas, almenas y torreones
+  muroX(p, -MX, MX, -8.05, 4.6);
+  for (let x = -MX + 0.3; x < MX; x += 1.0) caja(0.5, 0.45, 0.4, 0x6B6355, x, 4.8, -8.05, g, false);
+  const vent = new THREE.MeshBasicMaterial({ map: lienzoTex(128, 256, (c) => { const gr = c.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#1D2A5A'); gr.addColorStop(1, '#5B4A8A');
+    c.fillStyle = '#2A241C'; c.fillRect(0, 0, 128, 256); c.fillStyle = gr; c.beginPath(); c.moveTo(14, 250); c.lineTo(14, 80); c.quadraticCurveTo(64, -20, 114, 80); c.lineTo(114, 250); c.fill();
+    c.strokeStyle = '#2A241C'; c.lineWidth = 6; c.beginPath(); c.moveTo(64, 20); c.lineTo(64, 250); c.moveTo(14, 150); c.lineTo(114, 150); c.stroke(); for (let i = 0; i < 12; i++) { c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(20 + Math.random() * 90, 40 + Math.random() * 90, 2, 2); } }), toneMapped: false });
+  for (let x = -14; x <= 14; x += 7) plano(1.1, 2.2, vent, x + 1.7, 2.6, -7.86, 0, g);
+  muroZ(p, -8.05, 5.3, -MX, 4.6);
+  // torreones en las esquinas del fondo
+  for (const sx of [-1, 1]) { const tx = sx * (MX + 0.3), tz = -8.2;
+    cil(1.25, 1.35, 7.5, new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, 3, 2.5) }), tx, 3.75, tz, g, 20);
+    cono(1.6, 3.2, 0x2C3350, tx, 9.1, tz, g, 20);
+    for (let k = 0; k < 2; k++) { const w = plano(0.35, 0.6, new THREE.MeshBasicMaterial({ color: 0xFFC46B, toneMapped: false }), tx, 3 + k * 2.2, tz + 1.32, 0, g); } }
+  // salas
+  for (const s of SALAS.filter(q => q.piso === p)) {
+    const m = suelo(s.x0, s.x1, -8, 5.3, TEXS_SUELO[s.suelo](s.x1 - s.x0, 13.3), 0.02, g); m.userData.sala = s.id; pisosClic.push(m);
+    if (s.x1 < MX - 0.01) muroZ(p, -8, 5.3, s.x1, 2.5, 0.25);
+    // muro bajo hacia la galería, con puerta
+    const pt = s.puerta; if (pt - 0.8 > s.x0) muroX(p, s.x0, pt - 0.8, 5.3, 1.0, 0.25); if (pt + 0.8 < s.x1) muroX(p, pt + 0.8, s.x1, 5.3, 1.0, 0.25);
+    caja(0.2, 2.2, 0.3, 0x4A443A, pt - 0.85, 1.1, 5.3, g, false); caja(0.2, 2.2, 0.3, 0x4A443A, pt + 0.85, 1.1, 5.3, g, false);
+    const arco = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.12, 6, 16, Math.PI), mat(0x4A443A)); arco.position.set(pt, 2.2, 5.3); g.add(arco);
+    // nombre de la sala en el suelo
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(s.x1 - s.x0 - 0.6, 9), 0.75), new THREE.MeshBasicMaterial({ map: texto(s.nombre.split(' · ')[0], 1024, 90, { color: 'rgba(243,217,139,.92)', fuente: '700 60px Cinzel, Georgia, serif' }), transparent: true, depthWrite: false, toneMapped: false }));
+    r.rotation.x = -Math.PI / 2; r.position.set((s.x0 + s.x1) / 2, 0.04, 4.5); g.add(r);
+    // velas flotando bajo el techo de cada sala
+    velasSobre(p, s.x0 + 0.6, s.x1 - 0.6, -7, 4, Math.round((s.x1 - s.x0) * (s.id === 'comedor' ? 9 : 1.2)), s.id === 'comedor' ? 2.6 : 3.0, s.id === 'comedor' ? 3.9 : 3.8);
+    antorcha(p, s.x0 + 0.9, -7.85); antorcha(p, s.x1 - 0.9, -7.85);
+  }
+}
+PISOS.forEach(construirPiso);
+
+// suelo exterior, lago y montañas
+suelo(-160, 160, -160, 160, new THREE.MeshLambertMaterial({ map: TEX.cesped }), -0.45, escena);
+const lago = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.MeshLambertMaterial({ color: 0x0E1A33, emissive: 0x050A1A })); lago.rotation.x = -Math.PI / 2; lago.scale.set(1.6, 0.6, 1); lago.position.set(4, -0.42, 34); escena.add(lago);
+const reflejo = new THREE.Mesh(new THREE.PlaneGeometry(3, 18), new THREE.MeshBasicMaterial({ color: 0xC9D4FF, transparent: true, opacity: 0.12, toneMapped: false })); reflejo.rotation.x = -Math.PI / 2; reflejo.position.set(-8, -0.4, 34); escena.add(reflejo);
+for (let i = 0; i < 14; i++) { const a = Math.PI * (0.65 + 0.7 * i / 13), r = 120 + Math.random() * 20; cono(14 + Math.random() * 14, 30 + Math.random() * 30, 0x151A2C, Math.cos(a) * r * 0.9, 12, -60 + Math.sin(a) * r * -0.8, escena, 7); }
+for (let i = 0; i < 40; i++) { const x = (Math.random() - .5) * 130, z = 12 + Math.random() * 50; if (Math.hypot((x - 4) / 64, (z - 34) / 24) < 1) continue;
+  cil(0.15, 0.2, 1, 0x2A1E14, x, 0.05, z, escena, 6); cono(0.9 + Math.random() * 0.6, 2.6 + Math.random(), 0x14301E, x, 1.9, z, escena, 7); }
+// estrellas y luna
+{ const n = 900, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const u = Math.random() * Math.PI * 2, v = Math.random() * 0.45 + 0.08, r = 260;
+    pos[i * 3] = Math.cos(u) * Math.cos(v) * r; pos[i * 3 + 1] = Math.sin(v) * r; pos[i * 3 + 2] = Math.sin(u) * Math.cos(v) * r - 40; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  escena.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xE8ECFF, size: 1.6, sizeAttenuation: false, toneMapped: false }))); }
+const lunaSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: lienzoTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, '#FFFBEA'); gr.addColorStop(0.45, '#F2EED8'); gr.addColorStop(0.5, 'rgba(242,238,216,.25)'); gr.addColorStop(1, 'rgba(242,238,216,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }), toneMapped: false, depthWrite: false }));
+lunaSprite.scale.set(30, 30, 1); lunaSprite.position.set(-90, 120, -170); escena.add(lunaSprite);
+
+// gran torre central y torres de las alturas
+{ const z4 = baseZ(4) - 12, y4 = baseY(4);
+  cil(3.2, 3.6, 22, new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, 6, 6) }), 0, y4 + 5, z4, escena, 24); cono(4.2, 9, 0x2C3350, 0, y4 + 20.5, z4, escena, 24);
+  for (let k = 0; k < 5; k++) plano(0.5, 0.9, new THREE.MeshBasicMaterial({ color: 0xFFC46B, toneMapped: false }), (k % 2 ? 1 : -1) * 0.8, y4 + 2 + k * 3, z4 + 3.3, 0);
+  for (const [x, h] of [[-11, 14], [11, 17]]) { cil(2, 2.3, h, new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, 4, 4) }), x, y4 + h / 2 - 3, z4 + 1, escena, 20); cono(2.8, 6, 0x2C3350, x, y4 + h - 3 + 3, z4 + 1, escena, 20);
+    plano(0.45, 0.8, new THREE.MeshBasicMaterial({ color: 0xFFC46B, toneMapped: false }), x, y4 + h - 6, z4 + 3.3, 0); } }
+
+// ---------- la Gran Escalera (une las galerías de los cinco pisos por el lado derecho)
+for (let p = 0; p < 4; p++) {
+  const a = mundo(p, ESCX, 6.6), b = mundo(p + 1, ESCX, 6.6), n = 22, gEsc = new THREE.Group(); escena.add(gEsc);
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; const y = a.y + (b.y - a.y) * t, z = a.z + (b.z - a.z) * t; caja(2.1, 0.18, (a.z - b.z) / n + 0.05, 0x6D6559, ESCX, y - 0.09, z, gEsc, false); }
+  const largo = Math.hypot(b.z - a.z, b.y - a.y), ang = Math.atan2(b.y - a.y, a.z - b.z);
+  for (const sx of [-1.1, 1.1]) { const r = caja(0.12, 0.9, largo, 0x4F4A42, ESCX + sx, (a.y + b.y) / 2 + 0.45, (a.z + b.z) / 2, gEsc, false); r.rotation.x = ang; }
+  for (const t of [0.3, 0.7]) { const y = a.y + (b.y - a.y) * t, z = a.z + (b.z - a.z) * t; cil(0.35, 0.45, y + 0.4, new THREE.MeshLambertMaterial({ map: texRep(TEX.muro, 1, 2) }), ESCX, (y - 0.45) / 2 - 0.2, z, gEsc, 10); }
+  caja(2.4, 0.2, 2.4, 0x6D6559, ESCX, b.y - 0.1, b.z, gEsc, false); caja(2.4, 0.2, 2.4, 0x6D6559, ESCX, a.y - 0.1, a.z, gEsc, false);
+  const w = mundo(p, ESCX + 1.1, 6.6, 1.3); llama(w.x, w.y, w.z, 2.2);
+}
+
+// ================================================================== mobiliario
+const G = p => PISO[p];
+function mesa(p, x, z, w, d, color = 0x5A3A22, h = 0.78) { caja(w, 0.08, d, color, x, h, z, G(p)); for (const sx of [-1, 1]) for (const sz of [-1, 1]) caja(0.08, h, 0.08, 0x3A2616, x + sx * (w / 2 - 0.1), h / 2, z + sz * (d / 2 - 0.1), G(p), false); }
+function banco(p, x, z, w, d = 0.35) { caja(w, 0.07, d, 0x4A3020, x, 0.45, z, G(p)); for (const sx of [-1, 1]) caja(0.07, 0.45, d, 0x3A2616, x + sx * (w / 2 - 0.1), 0.22, z, G(p), false); }
+function estanteria(p, x, z, w = 2.4, h = 3.2, ry = 0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; G(p).add(g);
+  caja(w, h, 0.45, 0x3E2817, 0, h / 2, 0, g);
+  const lib = lienzoTex(256, 256, c => { c.fillStyle = '#2A1A0E'; c.fillRect(0, 0, 256, 256); const cols = ['#7F1D1D', '#1E3A8A', '#14532D', '#7A5600', '#4B2A7B', '#8B5E34', '#5B2333'];
+    for (let r = 0; r < 4; r++) for (let x2 = 6; x2 < 250;) { const w2 = 6 + Math.random() * 10; c.fillStyle = cols[Math.random() * cols.length | 0]; const hh = 40 + Math.random() * 16; c.fillRect(x2, r * 64 + 62 - hh, w2, hh); c.fillStyle = 'rgba(217,180,90,.6)'; c.fillRect(x2, r * 64 + 62 - hh + 8, w2, 2); x2 += w2 + 1; }
+    c.fillStyle = '#3E2817'; for (let r = 0; r < 5; r++) c.fillRect(0, r * 64 - 2, 256, 6); });
+  plano(w - 0.12, h - 0.2, new THREE.MeshLambertMaterial({ map: lib }), 0, h / 2, 0.23, 0, g); return g; }
+function caldero(p, x, z, color = 0x3CFF7A) { const g = G(p); const c = esfera(0.36, 0x1A1A1A, x, 0.42, z, g, 14); c.scale.y = 0.8;
+  const liq = new THREE.Mesh(new THREE.CircleGeometry(0.28, 16), new THREE.MeshBasicMaterial({ color, toneMapped: false })); liq.rotation.x = -Math.PI / 2; liq.position.set(x, 0.66, z); g.add(liq);
+  for (let i = 0; i < 3; i++) { const w = mundo(p, x + Math.cos(i * 2.1) * 0.2, z + Math.sin(i * 2.1) * 0.2, 0.08); llama(w.x, w.y, w.z, 1.4); }
+  CALDEROS.push({ pos: mundo(p, x, z, 0.75), color }); }
+const CALDEROS = [];
+// espejos mágicos que muestran código (una textura viva compartida)
+const espejoCv = document.createElement('canvas'); espejoCv.width = 256; espejoCv.height = 160; const espejoTex = new THREE.CanvasTexture(espejoCv); espejoTex.colorSpace = THREE.SRGBColorSpace;
+let lineasCod = []; function pintarEspejo() { const g = espejoCv.getContext('2d'); g.fillStyle = '#04150C'; g.fillRect(0, 0, 256, 160);
+  if (Math.random() < 0.6 || !lineasCod.length) { lineasCod.push({ ind: (Math.random() * 4 | 0) * 12, w: 30 + Math.random() * 150, c: ['#3CFF7A', '#9AE6B4', '#F3D98B', '#7DD3FC', '#C4B5FD'][Math.random() * 5 | 0] }); if (lineasCod.length > 12) lineasCod.shift(); }
+  lineasCod.forEach((l, i) => { g.fillStyle = l.c; g.fillRect(12 + l.ind, 10 + i * 12, l.w, 6); }); g.strokeStyle = '#3CFF7A'; g.lineWidth = 3; g.strokeRect(2, 2, 252, 156); espejoTex.needsUpdate = true; }
+pintarEspejo(); setInterval(pintarEspejo, 280);
+function espejo(p, x, z, y = 1.75, w = 1.2) { const m = plano(w, w * 0.62, new THREE.MeshBasicMaterial({ map: espejoTex, toneMapped: false, transparent: true, opacity: 0.92 }), x, y, z, 0, G(p)); caja(w + 0.1, w * 0.62 + 0.1, 0.04, 0x2A2A2A, x, y, z - 0.03, G(p), false); return m; }
+function sillon(p, x, z, ry, color = 0x7A1F1F) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; G(p).add(g); caja(0.9, 0.45, 0.8, color, 0, 0.25, 0, g); caja(0.9, 0.7, 0.2, color, 0, 0.7, -0.32, g); caja(0.16, 0.4, 0.8, color, -0.45, 0.55, 0, g); caja(0.16, 0.4, 0.8, color, 0.45, 0.55, 0, g); }
+function chimenea(p, x, z) { const g = G(p); caja(2.6, 2.4, 0.7, 0x5E574B, x, 1.2, z, g); caja(1.4, 1.1, 0.3, 0x120C08, x, 0.55, z + 0.25, g, false); caja(3, 0.2, 0.9, 0x4A443A, x, 2.45, z + 0.05, g);
+  for (let i = 0; i < 5; i++) { const w = mundo(p, x - 0.4 + i * 0.2, z + 0.4, 0.25 + Math.random() * 0.15); llama(w.x, w.y, w.z, 4); } }
+function estandarte(p, x, z, color, y = 2.8, alto = 2.2) { const t = lienzoTex(64, 160, g => { g.fillStyle = color; g.fillRect(0, 0, 64, 160); g.fillStyle = '#D9B45A'; g.fillRect(0, 0, 64, 8);
+  g.beginPath(); g.moveTo(0, 150); g.lineTo(32, 128); g.lineTo(64, 150); g.lineTo(64, 160); g.lineTo(0, 160); g.fill(); g.fillStyle = 'rgba(217,180,90,.85)'; g.beginPath(); g.arc(32, 64, 16, 0, Math.PI * 2); g.fill(); });
+  plano(0.8, alto, new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), x, y, z, 0, G(p)); }
+function planta(p, x, z, tam = 1) { const g = G(p); cil(0.22 * tam, 0.16 * tam, 0.3 * tam, 0x7A4A2A, x, 0.15 * tam, z, g, 10); const h = esfera(0.32 * tam, [0x2F6B3A, 0x3E8A47, 0x5BA65B][Math.random() * 3 | 0], x, 0.5 * tam, z, g, 8); h.scale.y = 1.3; }
+function lechuza(padre, x, y, z, color = 0xB89A72) { const o = new THREE.Group(); o.position.set(x, y, z); padre.add(o); const c = esfera(0.16, color, 0, 0.16, 0, o, 10); c.scale.y = 1.25; esfera(0.12, color, 0, 0.38, 0.02, o, 10);
+  for (const s of [-1, 1]) esfera(0.035, 0xF5C542, s * 0.05, 0.4, 0.12, o, 6); return o; }
+function cuadro(p, x, y, z, w, h, fondo) { const t = lienzoTex(128, 160, g => { g.fillStyle = fondo; g.fillRect(0, 0, 128, 160); g.fillStyle = 'rgba(255,230,200,.85)'; g.beginPath(); g.ellipse(64, 70, 22, 28, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(30,20,40,.85)'; g.fillRect(28, 100, 72, 60); g.strokeStyle = '#C9A227'; g.lineWidth = 10; g.strokeRect(5, 5, 118, 150); }); plano(w, h, new THREE.MeshLambertMaterial({ map: t }), x, y, z, 0, G(p)); }
+
+// ---- piso 0 · mazmorras
+caldero(0, -16.2, -1.0); caldero(0, -12.2, -1.0, 0x7DD3FC); caldero(0, -4.4, -1.0, 0xC4B5FD); caldero(0, -0.4, -1.0, 0xF3D98B);
+for (const x of [-15, -11, -3, 1]) { mesa(0, x, -0.75, 1.5, 0.7); espejo(0, x, -0.95, 2.45, 1.1); }
+mesa(0, -7, -5.2, 2.2, 0.8, 0x2A1A0E); espejo(0, -7, -7.7, 2.5, 1.7); estanteria(0, -14, -7.5, 4, 2.8); estanteria(0, -1, -7.5, 3.6, 2.8);
+for (let i = 0; i < 12; i++) esfera(0.08 + Math.random() * 0.05, [0x3CFF7A, 0xC4B5FD, 0xF472B6, 0x7DD3FC][i % 4], -15.5 + i * 0.32, 2.2 + (i % 3) * 0.6, -7.2, G(0), 6);
+estandarte(0, -9.5, -7.8, '#1A472A'); estandarte(0, -4.5, -7.8, '#1A472A');
+// cocinas
+caja(5, 0.9, 0.9, 0x5A4A3A, 6, 0.45, -7.2, G(0)); caja(1.6, 1.4, 0.9, 0x2A2420, 4.4, 0.7, -7.2, G(0)); for (let i = 0; i < 3; i++) { const w = mundo(0, 4.0 + i * 0.4, -6.7, 0.2); llama(w.x, w.y, w.z, 2.6); }
+for (let i = 0; i < 5; i++) cil(0.15, 0.12, 0.25, [0xB87333, 0x8E6E4E, 0xC0C0C0][i % 3], 5.6 + i * 0.6, 1.0, -7.2, G(0), 10);
+mesa(0, 6, -2.3, 3.4, 1.2, 0x6B4A2E, 0.6); for (let i = 0; i < 4; i++) esfera(0.13, [0xD9502F, 0xE9C46A, 0x8AB17D][i % 3], 5 + i * 0.6, 0.72, -2.3, G(0), 8);
+// cámara de los secretos
+for (const x of [10.6, 15.8]) for (const z of [-6, -2, 2]) { cil(0.4, 0.5, 3.6, 0x2E3A30, x, 1.8, z, G(0), 10); const s = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.09, 6, 18, Math.PI * 1.6), mat(0x1F5B3A)); s.position.set(x, 2.4, z); s.rotation.x = Math.PI / 2; G(0).add(s); }
+{ const pool = new THREE.Mesh(new THREE.CircleGeometry(1.4, 24), new THREE.MeshBasicMaterial({ color: 0x0B3D22, toneMapped: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(13.2, 0.04, 1.6); G(0).add(pool);
+  caja(1.6, 2.6, 0.5, 0x1E2A22, 13.2, 1.3, -7.0, G(0)); caja(1.2, 0.7, 0.7, 0x1E2A22, 13.2, 0.35, -6.5, G(0)); const cab = esfera(0.9, 0x24382B, 13.2, 3.6, -7.3, G(0), 10); cab.scale.set(1.3, 0.8, 0.7);
+  for (const s of [-1, 1]) esfera(0.12, 0x3CFF7A, 13.2 + s * 0.45, 3.7, -6.75, G(0), 8).material = new THREE.MeshBasicMaterial({ color: 0x3CFF7A, toneMapped: false }); }
+const luzCamara = new THREE.PointLight(0x3CFF7A, 18, 10, 2); luzCamara.position.copy(mundo(0, 13.2, -2, 2.5)); escena.add(luzCamara);
+const luzPociones = new THREE.PointLight(0x7CFFB0, 22, 16, 2); luzPociones.position.copy(mundo(0, -7, -1.5, 2.8)); escena.add(luzPociones);
+
+// ---- piso 1 · Gran Comedor, biblioteca, vestíbulo
+const MESAS_COMEDOR = [-14.6, -11.2, -7.8, -4.4];
+for (const x of MESAS_COMEDOR) { mesa(1, x, 0.4, 0.9, 7.6, 0x4A2E1A); banco(1, x - 0.75, 0.4, 7.2); banco(1, x + 0.75, 0.4, 7.2);
+  for (let i = 0; i < 6; i++) { esfera(0.09, 0xD9B45A, x, 0.87, -2.6 + i * 1.2, G(1), 8); } }
+mesa(1, -9.2, -6.2, 11, 1, 0x3A2214); caja(0.9, 1.6, 0.6, 0x5A2E7A, -9.2, 0.8, -7.1, G(1)); // silla del director
+['#7F0909', '#1A472A', '#0E1A40', '#ECB939'].forEach((c, i) => estandarte(1, -15 + i * 4.1, -7.8, c, 2.9, 2.4));
+{ const n = 260, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const w = mundo(1, -MX + 0.5 + Math.random() * 15.8, -7.5 + Math.random() * 12.3, 4.4 + Math.random() * 0.5); pos.set([w.x, w.y, w.z], i * 3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const est = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xDCE3FF, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.85, toneMapped: false })); escena.add(est); window._techo = est; }
+const luzComedor = new THREE.PointLight(0xFFB65C, 40, 20, 2); luzComedor.position.copy(mundo(1, -9, -1, 3.2)); escena.add(luzComedor);
+for (let i = 0; i < 4; i++) estanteria(1, 0.8 + i * 2.6, -7.5, 2.4, 3.4);
+estanteria(1, 10.6, -3, 3.2, 3, -Math.PI / 2); estanteria(1, -0.6, -3, 3.2, 3, Math.PI / 2);
+mesa(1, 2, -1.75, 1.6, 0.8); mesa(1, 7, -1.75, 1.6, 0.8); mesa(1, 4.5, 1.8, 3.2, 1.1);
+for (let i = 0; i < 8; i++) { const b = caja(0.32, 0.06, 0.24, [0x7F1D1D, 0x1E3A8A, 0x14532D, 0x7A5600][i % 4], 1 + Math.random() * 9, 2.4 + Math.random() * 1.2, -5 + Math.random() * 7, G(1), false); b.userData.flota = { y: b.position.y, f: Math.random() * 6 }; LIBROS_FLOTANTES.push(b); }
+function relojArena(p, x, z, color) { const g = G(p); cil(0.32, 0.32, 0.08, 0xC9A227, x, 0.05, z, g, 12); cil(0.32, 0.32, 0.08, 0xC9A227, x, 2.4, z, g, 12);
+  const vidrio = new THREE.MeshLambertMaterial({ color: 0xCFE3FF, transparent: true, opacity: 0.25 }); cil(0.28, 0.06, 1.1, vidrio, x, 1.8, z, g, 12); cil(0.06, 0.28, 1.1, vidrio, x, 0.65, z, g, 12);
+  const arena = cil(0.25, 0.25, 0.5, new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: 0.35 }), x, 0.4, z, g, 12); return arena; }
+const RELOJES = [['#7F0909', 'marketing'], ['#1A472A', 'tecnologia'], ['#0E1A40', 'academia'], ['#ECB939', 'produccion']].map(([c, area], i) => ({ area, malla: relojArena(1, 12.4 + i * 1.3, -6.6, new THREE.Color(c).getHex()) }));
+mesa(1, 14.2, -2.6, 1.8, 0.9, 0x3A2616); for (let i = 0; i < 6; i++) caja(0.06, 0.3, 0.06, 0xC9A227, 13.6 + i * 0.25, 1.0, -2.6, G(1), false);
+{ const t = new THREE.TextureLoader().load('marca/logo_castillo.png', undefined, undefined, () => {   // sin logo: letrero de texto
+    const c = document.createElement('canvas'); c.width = 512; c.height = 348; const x = c.getContext('2d');
+    x.fillStyle = '#C9A227'; x.font = '600 64px Cinzel, serif'; x.textAlign = 'center'; x.fillText('HOGWARTS', 256, 160); x.font = '600 44px Cinzel, serif'; x.fillText('I · A', 256, 230);
+    t.image = c; t.needsUpdate = true; }); t.colorSpace = THREE.SRGBColorSpace;
+  caja(3.2, 2.3, 0.08, 0x14213D, 14.3, 3.1, -7.86, G(1), false); plano(2.8, 1.9, new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false }), 14.3, 3.1, -7.8, 0, G(1)); }
+
+// ---- piso 2 · aulas y salas comunes
+chimenea(2, -10, -7.5); sillon(2, -12.6, -5.4, 0.5); sillon(2, -7.4, -5.4, -0.5); sillon(2, -15.6, 3.2, Math.PI * 0.85); sillon(2, -4.4, 3.2, -Math.PI * 0.85);
+for (const [x, z] of [[-13.5, -2.25], [-9.5, -2.25], [-5.5, -2.25], [-14, 1.95], [-10, 1.95]]) mesa(2, x, z, 1.5, 0.7, 0x5A2E1A);
+estandarte(2, -15.8, -7.8, '#7F0909'); estandarte(2, -4.2, -7.8, '#7F0909');
+const luzChimenea = new THREE.PointLight(0xFF8A3C, 26, 14, 2); luzChimenea.position.copy(mundo(2, -10, -6, 1.2)); escena.add(luzChimenea);
+mesa(2, 1, -3.25, 2, 0.9, 0x3A2616); caja(3.6, 1.6, 0.08, 0x1E2A22, 1, 2.6, -7.86, G(2), false);
+for (let r = 0; r < 2; r++) for (const x of [-1.6, 1, 3.6]) { mesa(2, x, -0.4 + r * 2, 1.6, 0.6, 0x5A3A22, 0.7); banco(2, x, 0.25 + r * 2, 1.4); }
+const armario = caja(1.1, 2.2, 0.7, 0x3A2616, 3.9, 1.1, -6.8, G(2)); // el armario del boggart
+for (let i = 0; i < 6; i++) caja(0.5, 0.18 + (i % 3) * 0.06, 0.35, [0x7F1D1D, 0x1E3A8A, 0x7A5600][i % 3], 7.6 + (i % 2) * 0.1, 0.1 + i * 0.2, -3.3, G(2), false); // libros de Flitwick
+mesa(2, 8, -2.75, 1.6, 0.8, 0x3A2616); for (const x of [6.2, 9.8]) for (const z of [0, 2]) mesa(2, x, z, 1.4, 0.6, 0x5A3A22, 0.7);
+for (let i = 0; i < 5; i++) { const pl = caja(0.25, 0.04, 0.25, 0xF3D98B, 6 + i * 1, 2.6 + (i % 2) * 0.5, -5, G(2), false); pl.userData.flota = { y: pl.position.y, f: i }; LIBROS_FLOTANTES.push(pl); }
+{ const vid = new THREE.MeshLambertMaterial({ color: 0xBFE6D0, transparent: true, opacity: 0.18, side: THREE.DoubleSide });
+  caja(MX - 11, 0.06, 13.3, vid, (11 + MX) / 2, 3.6, -1.35, G(2), false);
+  mesa(2, 14, -1.25, 2.2, 0.9, 0x5A3A22); for (let i = 0; i < 14; i++) planta(2, 11.7 + (i % 5) * 1.3, -7 + Math.floor(i / 5) * 1.6 + (i > 9 ? 6.5 : 0), 0.8 + Math.random() * 0.6); }
+
+// ---- piso 3 · estudio de arte y Sala de los Menesteres
+for (const [x, tipo] of [[-14, 'arte'], [-9, 'caballete'], [-4, 'camara']]) mesa(3, x, -2.25, 1.6, 0.8, 0x4A3020);
+{ const g = G(3); for (const x of [-15.5, -12.5]) { caja(0.06, 1.8, 0.06, 0x3A2616, x, 0.9, -5.5, g); const lien = plano(1.1, 0.8, new THREE.MeshLambertMaterial({ map: lienzoTex(128, 96, c => { c.fillStyle = '#F5ECD7'; c.fillRect(0, 0, 128, 96);
+  for (let i = 0; i < 6; i++) { c.fillStyle = ['#E0479E', '#7DD3FC', '#F3D98B', '#4B2A7B', '#22C55E'][i % 5]; c.beginPath(); c.arc(Math.random() * 128, Math.random() * 96, 10 + Math.random() * 18, 0, 7); c.fill(); } }) }), x, 1.5, -5.45, 0, g); }
+  caja(0.06, 1.6, 0.06, 0x3A2616, -9, 0.8, -4.2, g); plano(1.3, 0.9, new THREE.MeshLambertMaterial({ map: texto('ITERHUB', 256, 180, { color: '#002F6C', fondo: '#FFCC00', fuente: '800 54px Inter' }) }), -9, 1.45, -4.15, 0, g);
+  for (const s of [[-4, -4.4], [-2.2, -6]]) { for (let k = 0; k < 3; k++) { const l = caja(0.03, 1.3, 0.03, 0x111111, s[0] + Math.cos(k * 2.1) * 0.3, 0.65, s[1] + Math.sin(k * 2.1) * 0.3, g, false); l.rotation.z = Math.cos(k * 2.1) * 0.2; }
+    caja(0.45, 0.3, 0.35, 0x1A1A1A, s[0], 1.4, s[1], g); cil(0.1, 0.1, 0.25, 0x333333, s[0], 1.4, s[1] + 0.25, g, 10).rotation.x = Math.PI / 2; }
+  caja(3.4, 1.9, 0.08, 0x111111, -8.5, 2.6, -7.86, g, false); plano(3.2, 1.7, new THREE.MeshBasicMaterial({ map: espejoTex, toneMapped: false }), -8.5, 2.6, -7.8, 0, g);
+  estandarte(3, -16, -7.8, '#ECB939'); estandarte(3, -2, -7.8, '#7F0909'); }
+const MESA_REDONDA = { x: 8, z: -1.6 };
+{ const g = G(3); cil(2.4, 2.4, 0.12, 0x4A2E1A, MESA_REDONDA.x, 0.82, MESA_REDONDA.z, g, 40); cil(0.4, 0.6, 0.8, 0x3A2214, MESA_REDONDA.x, 0.4, MESA_REDONDA.z, g, 16);
+  const orbe = esfera(0.35, new THREE.MeshBasicMaterial({ color: 0xC4B5FD, transparent: true, opacity: 0.85, toneMapped: false }), MESA_REDONDA.x, 1.35, MESA_REDONDA.z, g, 20); window._orbe = orbe;
+  for (let i = 0; i < 6; i++) estanteria(3, 1 + i * 2.7, -7.5, 2.5, 3.3);
+  ['#7F0909', '#1A472A', '#0E1A40', '#ECB939'].forEach((c, i) => estandarte(3, 0.5 + i * 5, 4.4, c, 3, 1.4)); }
+const luzMenesteres = new THREE.PointLight(0xB79CFF, 24, 14, 2); luzMenesteres.position.copy(mundo(3, MESA_REDONDA.x, MESA_REDONDA.z, 3)); escena.add(luzMenesteres);
+
+// ---- piso 4 · torres altas
+{ const g = G(4); mesa(4, -10, -3.7, 2.6, 1.1, 0x3A2214); caja(1, 1.8, 0.6, 0x5A2E7A, -10, 0.9, -6.1, g);
+  cil(0.04, 0.04, 1.5, 0xC9A227, -14, 0.75, -5.6, g, 6); caja(0.7, 0.04, 0.04, 0xC9A227, -14, 1.5, -5.6, g, false); // percha del fénix
+  const fen = new THREE.Group(); fen.position.set(-14, 1.55, -5.6); g.add(fen); const cf = esfera(0.2, 0xC2410C, 0, 0.2, 0, fen, 10); cf.scale.set(1, 1.3, 1.1); esfera(0.12, 0xEA580C, 0, 0.45, 0.06, fen, 8);
+  const cola = cono(0.1, 0.7, 0xF59E0B, 0, -0.1, -0.15, fen, 8); cola.rotation.x = 2.6; window._fenix = fen;
+  cil(0.45, 0.3, 0.9, 0x6B6355, -5.6, 0.45, -5.4, g, 16); const pens = new THREE.Mesh(new THREE.CircleGeometry(0.4, 20), new THREE.MeshBasicMaterial({ color: 0xDCE3FF, toneMapped: false })); pens.rotation.x = -Math.PI / 2; pens.position.set(-5.6, 0.91, -5.4); g.add(pens);
+  estanteria(4, -15.5, -7.5, 3, 3.4); estanteria(4, -4.5, -7.5, 2.6, 3.4);
+  for (let i = 0; i < 6; i++) cuadro(4, -13.2 + i * 1.1, 3.3 + (i % 2) * 0.5, -7.86, 0.8, 1, ['#3E2463', '#1F4A33', '#5B2333', '#22305A'][i % 4]);
+  for (let i = 0; i < 4; i++) { const ins = esfera(0.12, 0xC9A227, -8 + i * 0.5, 1.0, -3.4, g, 8); }
+  mesa(4, 1, -3.2, 2, 0.9, 0x3A2214); estanteria(4, -1.5, -7.5, 2.4, 3.2); estanteria(4, 2.5, -7.5, 2.4, 3.2); estandarte(4, 4.3, -7.8, '#1F5B3A');
+  for (let i = 0; i < 3; i++) for (let k = 0; k < 2; k++) { caja(1.4, 0.06, 0.3, 0x3A2616, 6.5 + i * 1.2, 1.2 + k * 1.1, -7.6 + k * 0, g, false); lechuza(g, 6.2 + i * 1.2, 1.24 + k * 1.1, -7.6, [0xF5F5F5, 0xB89A72, 0x8E7A5E][(i + k) % 3]); }
+  for (let i = 0; i < 3; i++) lechuza(g, 6.4 + i * 1.5, 0.02, -1 + (i % 2), [0xB89A72, 0xF5F5F5, 0x6B5A44][i]);
+  const tel = new THREE.Group(); tel.position.set(15.2, 0, -3.4); g.add(tel); for (let k = 0; k < 3; k++) { const l = caja(0.04, 1.3, 0.04, 0x3A2616, Math.cos(k * 2.1) * 0.3, 0.6, Math.sin(k * 2.1) * 0.3, tel, false); l.rotation.z = Math.cos(k * 2.1) * 0.25; }
+  const tubo = cil(0.09, 0.14, 1.4, 0xC9A227, 0, 1.45, 0, tel, 12); tubo.rotation.x = -0.9; mesa(4, 13.5, -2.25, 1.6, 0.8, 0x3A2214);
+  const globo = esfera(0.4, 0x1E3A8A, 11.5, 1.15, -6.2, g, 16); window._globo = globo; cil(0.05, 0.12, 0.8, 0xC9A227, 11.5, 0.4, -6.2, g, 8); }
+const luzDespacho = new THREE.PointLight(0xFFB65C, 22, 14, 2); luzDespacho.position.copy(mundo(4, -10, -3, 3)); escena.add(luzDespacho);
+
+// velas en la gran escalera y la galería
+for (let p = 0; p < 4; p++) for (let i = 1; i < 4; i++) { const a = mundo(p, ESCX, 6.6), b = mundo(p + 1, ESCX, 6.6), t = i / 4; vela(ESCX, a.y + (b.y - a.y) * t + 2.2, a.z + (b.z - a.z) * t); }
+
+// ---------- instanciar velas y llamas
+const LIBROS_FLOTANTES_LISTA = LIBROS_FLOTANTES;
+const geoVela = new THREE.CylinderGeometry(0.045, 0.05, 0.3, 8);
+const velasMesh = new THREE.InstancedMesh(geoVela, new THREE.MeshLambertMaterial({ color: 0xF5ECD7, emissive: 0x6B5A3A }), VELAS.length); escena.add(velasMesh);
+const _m4 = new THREE.Matrix4();
+const geoL = new THREE.BufferGeometry(); const posL = new Float32Array(LLAMAS.length * 3), faseL = new Float32Array(LLAMAS.length), tamL = new Float32Array(LLAMAS.length), flotaL = new Float32Array(LLAMAS.length);
+LLAMAS.forEach((l, i) => { posL.set([l.x, l.y, l.z], i * 3); faseL[i] = l.f; tamL[i] = l.t; flotaL[i] = l.flota ? 1 : 0; });
+geoL.setAttribute('position', new THREE.BufferAttribute(posL, 3)); geoL.setAttribute('fase', new THREE.BufferAttribute(faseL, 1)); geoL.setAttribute('tam', new THREE.BufferAttribute(tamL, 1)); geoL.setAttribute('flota', new THREE.BufferAttribute(flotaL, 1));
+const matL = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { tiempo: { value: 0 }, escala: { value: 1 } },
+  vertexShader: `attribute float fase; attribute float tam; attribute float flota; uniform float tiempo; uniform float escala; varying float vB;
+    void main(){ vec3 p = position; p.y += flota * 0.07 * sin(tiempo * 1.3 + fase); vB = 0.75 + 0.25 * sin(tiempo * 11.0 + fase * 3.0);
+      vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = tam * escala * (0.85 + 0.15 * sin(tiempo * 9.0 + fase)); }`,
+  fragmentShader: `varying float vB; void main(){ vec2 c = gl_PointCoord - 0.5; c.y *= 0.75; float d = length(c); if (d > 0.5) discard; float a = smoothstep(0.5, 0.0, d);
+    vec3 col = mix(vec3(1.0, 0.45, 0.1), vec3(1.0, 0.95, 0.7), smoothstep(0.25, 0.0, d)); gl_FragColor = vec4(col * a * vB * 1.4, a); }` });
+const llamas = new THREE.Points(geoL, matL); llamas.frustumCulled = false; escena.add(llamas);
+function animarVelas(t) { VELAS.forEach((v, i) => { _m4.makeTranslation(v.x, v.y + (v.flota ? 0.07 * Math.sin(t * 1.3 + v.f) : 0), v.z); velasMesh.setMatrixAt(i, _m4); }); velasMesh.instanceMatrix.needsUpdate = true; matL.uniforms.tiempo.value = t; }
+// ================================================================== personajes
+const hex = (h, def = 0x888888) => h ? parseInt(h, 16) : def;
+function caraTex(ap) {
+  return lienzoTex(512, 256, g => {
+    const piel = '#' + (ap.piel || 'F0C8A8'); g.fillStyle = piel; g.fillRect(0, 0, 512, 256); const cx = 128;
+    if (ap.barba === 'sombra') { g.fillStyle = 'rgba(70,55,45,.32)'; g.beginPath(); g.ellipse(cx, 172, 46, 30, 0, 0, 7); g.fill(); }
+    const k = ap.ojosGrandes ? 1.9 : 1;
+    for (const s of [-1, 1]) { const x = cx + s * 22 * (ap.ojosGrandes ? 1.15 : 1);
+      g.fillStyle = '#FFFFFF'; g.beginPath(); g.ellipse(x, 120, 7 * k + 2, 6 * k + 2, 0, 0, 7); g.fill();
+      g.fillStyle = ap.ojosRojos ? '#D0191B' : ap.ojosGrandes ? '#3E6B3A' : '#2A1E12'; g.beginPath(); g.arc(x, 121, 4.5 * k, 0, 7); g.fill();
+      g.fillStyle = '#111'; g.beginPath(); g.arc(x, 121, 2 * k, 0, 7); g.fill();
+      g.strokeStyle = ap.pelo ? '#' + ap.pelo : 'rgba(90,70,60,.35)'; g.lineWidth = 4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(x - 9, 105); g.lineTo(x + 9, ap.ojosRojos ? (s < 0 ? 109 : 101) : 104); g.stroke(); }
+    if (ap.sinNariz) { g.fillStyle = 'rgba(70,40,40,.6)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * 4, 142, 2, 4, 0, 0, 7); g.fill(); } }
+    else { g.fillStyle = 'rgba(120,70,50,.3)'; g.beginPath(); g.ellipse(cx, 141, 6, 9, 0, 0, 7); g.fill(); }
+    g.strokeStyle = '#7A3B2E'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath();
+    if (ap.sinNariz) { g.moveTo(cx - 14, 165); g.lineTo(cx + 14, 162); } else g.arc(cx, 153, 13, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
+    if (ap.pecas) { g.fillStyle = 'rgba(150,80,40,.55)'; for (let i = 0; i < 16; i++) g.fillRect(cx - 38 + Math.random() * 76, 128 + Math.random() * 16, 3, 3); }
+    if (ap.cicatriz) { g.strokeStyle = '#B03030'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx - 8, 76); g.lineTo(cx + 2, 86); g.lineTo(cx - 5, 88); g.lineTo(cx + 5, 99); g.stroke(); }
+    if (!ap.sinNariz) { g.fillStyle = 'rgba(230,120,110,.18)'; for (const s of [-1, 1]) { g.beginPath(); g.arc(cx + s * 32, 145, 10, 0, 7); g.fill(); } }
+  });
+}
+function rayas(c1, c2) { return lienzoTex(64, 64, g => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#' + c2 : '#' + c1; g.fillRect(i * 8, 0, 8, 64); } }); }
+function mago(a) {
+  const ap = a.apariencia || {}, s = ap.escala || 1;
+  const raiz = new THREE.Group(), cuerpo = new THREE.Group(); cuerpo.scale.setScalar(s); raiz.add(cuerpo);
+  const tun = hex(ap.tunica, 0x1B1B22), forro = hex(ap.forro, 0x7F0909), piel = hex(ap.piel, 0xF0C8A8), pelo = ap.pelo ? hex(ap.pelo) : null;
+  cil(0.2, 0.42, 1.15, tun, 0, 0.575, 0, cuerpo, 18); cil(0.425, 0.43, 0.07, forro, 0, 0.035, 0, cuerpo, 18);
+  const fr = caja(0.07, 1.02, 0.02, forro, 0, 0.56, 0.305, cuerpo, false); fr.rotation.x = -0.19;
+  const hombros = esfera(0.25, tun, 0, 1.12, 0, cuerpo, 14); hombros.scale.set(1, 0.5, 0.78);
+  const brazos = [];
+  for (const sx of [-1, 1]) { const piv = new THREE.Group(); piv.position.set(sx * 0.25, 1.1, 0); cuerpo.add(piv);
+    cil(0.07, 0.11, 0.5, tun, 0, -0.24, 0, piv, 10); esfera(0.06, piel, 0, -0.52, 0.02, piv, 8); brazos.push(piv); }
+  const varita = cil(0.012, 0.017, 0.34, 0x4A2E1A, 0, -0.55, 0.15, brazos[1], 6); varita.rotation.x = Math.PI / 2;
+  const punta = new THREE.Object3D(); punta.position.set(0, -0.55, 0.33); brazos[1].add(punta);
+  if (ap.camara) caja(0.17, 0.11, 0.1, 0x1A1A1A, 0, -0.56, 0.08, brazos[0]);
+  const cab = new THREE.Group(); cab.position.y = 1.42; cuerpo.add(cab);
+  const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.21, 24, 16), new THREE.MeshLambertMaterial({ map: caraTex(ap) })); cabeza.castShadow = true; cab.add(cabeza);
+  const P = c => mat(c);
+  const casquete = (r = 0.222, corte = 0.45, tilt = -0.35) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 12, 0, Math.PI * 2, 0, Math.PI * corte), P(pelo)); m.rotation.x = tilt; m.castShadow = true; cab.add(m); return m; };
+  const bola = (r, x, y, z) => esfera(r, pelo, x, y, z, cab, 10);
+  switch (ap.peinado) {
+    case 'corto': casquete(); break;
+    case 'rapado': casquete(0.214, 0.42, -0.35); break;
+    case 'despeinado': casquete(0.225, 0.47, -0.3); for (let i = 0; i < 8; i++) { const an = i / 8 * Math.PI * 2; bola(0.07, Math.cos(an) * 0.15, 0.15 + Math.random() * 0.04, Math.sin(an) * 0.13 - 0.03); } break;
+    case 'largo': casquete(0.226, 0.5, -0.28); cil(0.2, 0.25, 0.6, pelo, 0, -0.22, -0.09, cab, 14); break;
+    case 'largoSuelto': casquete(0.226, 0.5, -0.28); caja(0.42, 0.62, 0.12, pelo, 0, -0.22, -0.13, cab); for (const sx of [-1, 1]) caja(0.07, 0.46, 0.16, pelo, sx * 0.2, -0.14, -0.02, cab); break;
+    case 'rizado': casquete(0.235, 0.55, -0.28); for (let i = 0; i < 14; i++) { const an = Math.PI * (0.15 + 0.7 * (i % 7) / 6) + (i > 6 ? Math.PI : 0); bola(0.11, Math.cos(an) * 0.2, -0.05 + (i % 3) * 0.08, Math.sin(an) * -0.16 - 0.05); } break;
+    case 'mono': casquete(0.222, 0.47, -0.3); bola(0.1, 0, 0.12, -0.2); break;
+    case 'cortina': casquete(0.226, 0.48, -0.12); for (const sx of [-1, 1]) caja(0.06, 0.4, 0.26, pelo, sx * 0.205, -0.1, -0.02, cab); caja(0.4, 0.42, 0.08, pelo, 0, -0.12, -0.18, cab); break;
+    case 'peinadoAtras': casquete(0.219, 0.42, -0.5); break;
+    case 'coleta': casquete(); { const c = cil(0.05, 0.03, 0.42, pelo, 0, -0.16, -0.25, cab, 8); c.rotation.x = 0.3; } break;
+    case 'entradas': casquete(0.224, 0.5, -0.95); break;
+    case 'melena': bola(0.2, 0, 0.13, -0.05); bola(0.23, 0, -0.03, -0.15); bola(0.15, -0.17, -0.02, -0.04); bola(0.15, 0.17, -0.02, -0.04); break;
+    case 'puntas': casquete(0.223, 0.45, -0.3); for (let i = 0; i < 7; i++) { const an = i / 7 * Math.PI * 2; const c = cono(0.05, 0.18, pelo, Math.cos(an) * 0.13, 0.2, Math.sin(an) * 0.12 - 0.03, cab, 6); c.rotation.z = -Math.cos(an) * 0.6; c.rotation.x = Math.sin(an) * 0.6; } break;
+    case 'rizadoCorto': for (let i = 0; i < 11; i++) { const an = i / 11 * Math.PI * 2; bola(0.075, Math.cos(an) * 0.15, 0.12 + (i % 2) * 0.04, Math.sin(an) * 0.13 - 0.05); } bola(0.09, 0, 0.18, -0.04); break;
+  }
+  const colBarba = pelo || 0xCCCCCC;
+  if (ap.barba === 'larga') { const b = cono(0.17, 0.8, colBarba, 0, -0.44, 0.1, cab, 14); b.rotation.x = Math.PI + 0.15; caja(0.2, 0.04, 0.05, colBarba, 0, -0.06, 0.2, cab); }
+  if (ap.barba === 'tupida') { const b = esfera(0.2, colBarba, 0, -0.13, 0.08, cab, 12); b.scale.set(1.15, 1.1, 0.9); }
+  if (ap.barba === 'bigote') caja(0.14, 0.035, 0.04, colBarba, 0, -0.06, 0.2, cab);
+  if (ap.sombrero === 'puntiagudo') { const c = hex(ap.sombreroColor, 0x333333); cil(0.36, 0.36, 0.025, c, 0, 0.17, 0, cab, 20); const k = cono(0.2, 0.62, c, 0, 0.48, -0.03, cab, 16); k.rotation.x = -0.14;
+    if (a.slug === 'coordinador') for (let i = 0; i < 5; i++) esfera(0.022, new THREE.MeshBasicMaterial({ color: 0xF3D98B, toneMapped: false }), Math.cos(i * 1.3) * 0.13, 0.3 + i * 0.07, 0.12 - i * 0.015, cab, 6); }
+  if (ap.sombrero === 'parchado') { const c = hex(ap.sombreroColor, 0x6B5B2E); cil(0.33, 0.33, 0.03, c, 0, 0.16, 0, cab, 16); const k = cono(0.19, 0.34, c, 0.03, 0.33, 0, cab, 12); k.rotation.z = -0.35; }
+  if (ap.gafas) { const mg = mat(ap.gafas === 'medialuna' ? 0xC9A227 : 0x1A1A1A);
+    for (const sx of [-1, 1]) { const tor = new THREE.Mesh(ap.gafas === 'medialuna' ? new THREE.TorusGeometry(0.045, 0.007, 6, 12, Math.PI) : new THREE.TorusGeometry(0.047, 0.008, 6, ap.gafas === 'cuadradas' ? 4 : 16), mg);
+      tor.position.set(sx * 0.056, 0.02, 0.205); if (ap.gafas === 'medialuna') tor.rotation.z = Math.PI; if (ap.gafas === 'cuadradas') tor.rotation.z = Math.PI / 4; cab.add(tor); }
+    caja(0.03, 0.008, 0.008, ap.gafas === 'medialuna' ? 0xC9A227 : 0x1A1A1A, 0, 0.03, 0.21, cab, false); }
+  if (ap.orejas) for (const sx of [-1, 1]) { const o = cono(0.07, 0.34, piel, sx * 0.3, 0.04, 0, cab, 8); o.rotation.z = -sx * Math.PI / 2.2; o.scale.z = 0.4; }
+  if (ap.bufanda) { const t = rayas(ap.bufanda[0], ap.bufanda[1]); t.wrapS = THREE.RepeatWrapping; t.repeat.set(3, 1);
+    const tor = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.06, 8, 18), new THREE.MeshLambertMaterial({ map: t })); tor.position.y = 1.24; tor.rotation.x = Math.PI / 2; cuerpo.add(tor);
+    const cola = caja(0.1, 0.38, 0.03, new THREE.MeshLambertMaterial({ map: rayas(ap.bufanda[0], ap.bufanda[1]) }), 0.08, 1.04, 0.24, cuerpo); cola.rotation.x = -0.2; }
+  const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.95, 8), new THREE.MeshBasicMaterial()); hit.position.y = 0.97; hit.visible = false; hit.userData.slug = a.slug; cuerpo.add(hit);
+  raiz.traverse(o => { o.userData.slug = a.slug; });
+  return { raiz, cuerpo, brazos, cab, punta, hit, escala: s };
+}
+
+// ================================================================== lugares de trabajo, paseos y rutas
+const PUESTOS = {
+  coordinador: { p: 4, x: -10, z: -4.5 }, 'revision-editorial': { p: 4, x: 1, z: -4 }, 'abogado-diablo': { p: 0, x: 13.2, z: -5.6 }, guardabosques: { p: 1, x: 14.2, z: -3.4 },
+  'estratega-marca': { p: 2, x: -13.5, z: -3 }, 'pauta-digital': { p: 2, x: -9.5, z: -3 }, 'redes-sociales': { p: 2, x: -5.5, z: -3 }, copywriter: { p: 2, x: -14, z: 1.2 }, 'contenido-web': { p: 2, x: -10, z: 1.2 },
+  'investigacion-audiencias': { p: 4, x: 13.5, z: -3 }, 'diseno-instruccional': { p: 2, x: 1, z: -4 }, 'investigacion-tematica': { p: 1, x: 2, z: -2.5 }, 'lecciones-guiones': { p: 1, x: 7, z: -2.5 },
+  'laboratorios-ia': { p: 2, x: 8, z: -3.5 }, 'material-clase': { p: 2, x: 14, z: -2 }, 'direccion-arte': { p: 3, x: -14, z: -3 }, 'diseno-grafico': { p: 3, x: -9, z: -3 }, 'produccion-video': { p: 3, x: -4, z: -3 },
+  'tareas-rapidas': { p: 0, x: 6, z: -3.1 }, 'arquitectura-software': { p: 0, x: -7, z: -6 }, 'desarrollo-frontend': { p: 0, x: -15, z: -1.5 }, 'desarrollo-backend': { p: 0, x: -11, z: -1.5 },
+  'pruebas-qa': { p: 0, x: -3, z: -1.5 }, automatizaciones: { p: 0, x: 1, z: -1.5 },
+};
+function salaEn(p, x, z) { if (z >= 5.3) return 'galeria'; const s = SALAS.find(q => q.piso === p && x >= q.x0 && x <= q.x1); return s ? s.id : 'galeria'; }
+for (const [slug, q] of Object.entries(PUESTOS)) { q.sala = salaEn(q.p, q.x, q.z); q.ry = 0; }
+const mira = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
+const SITIOS = [];
+function sitio(p, x, z, ry, texto, solo = null) { SITIOS.push({ id: SITIOS.length, p, x, z, ry, texto, sala: salaEn(p, x, z), solo }); }
+MESAS_COMEDOR.forEach(x => [-2, 0.4, 2.8].forEach(z => { sitio(1, x - 0.75, z, Math.PI / 2, 'Cenando en el Gran Comedor'); sitio(1, x + 0.75, z, -Math.PI / 2, 'Charlando en el Gran Comedor'); }));
+[[3, -6.6], [5.6, -6.6], [8.2, -6.6]].forEach(([x, z]) => sitio(1, x, z, Math.PI, 'Buscando un libro en la biblioteca'));
+sitio(1, 4.5, 1.0, 0, 'Leyendo en la biblioteca'); sitio(1, 4.5, 2.6, Math.PI, 'Estudiando en la biblioteca');
+sitio(1, 12.6, -5.4, Math.PI, 'Mirando los relojes de arena'); sitio(1, 15.4, 1.2, -0.6, 'Esperando en el vestíbulo');
+sitio(2, -12.2, -4.6, mira(-12.2, -4.6, -10, -7.5), 'Calentándose junto a la chimenea'); sitio(2, -7.8, -4.6, mira(-7.8, -4.6, -10, -7.5), 'Charlando junto a la chimenea');
+sitio(2, -15.4, 2.6, 0.6, 'Descansando en un sillón'); sitio(2, -4.6, 2.6, -0.6, 'Jugando ajedrez mágico');
+sitio(2, -1.6, 1.05, Math.PI, 'Repasando hechizos de defensa'); sitio(2, 3.6, 3.05, Math.PI, 'Tomando apuntes en Defensa');
+sitio(2, 6.2, 0.75, Math.PI, 'Practicando encantamientos'); sitio(2, 9.8, 2.75, Math.PI, 'Haciendo levitar una pluma');
+sitio(2, 12.4, 0.6, -2.4, 'Cuidando las plantas del invernadero'); sitio(2, 16, 2, 2.4, 'Regando las mandrágoras');
+sitio(3, -15.5, -4.6, Math.PI, 'Pintando un cuadro'); sitio(3, -12.5, -4.6, Math.PI, 'Admirando un lienzo'); sitio(3, -8.5, -6.4, Math.PI, 'Viendo el espejo de proyección');
+sitio(3, 2.6, 1.6, mira(2.6, 1.6, MESA_REDONDA.x, MESA_REDONDA.z), 'Explorando la Sala de los Menesteres'); sitio(3, 14.5, 1.2, mira(14.5, 1.2, MESA_REDONDA.x, MESA_REDONDA.z), 'Hojeando libros en la Sala de los Menesteres');
+sitio(3, 4, -6.6, Math.PI, 'Buscando algo en la Sala de los Menesteres');
+sitio(4, -5.6, -4.5, Math.PI, 'Mirando el pensadero', ['coordinador', 'revision-editorial']); sitio(4, -13.2, -4.6, mira(-13.2, -4.6, -14, -5.6), 'Conversando con Fawkes', ['coordinador']);
+sitio(4, 7, -3, Math.PI, 'Enviando una lechuza'); sitio(4, 8.8, -2.2, Math.PI, 'Dándole de comer a las lechuzas');
+sitio(4, 15.4, -2.2, mira(15.4, -2.2, 15.2, -3.4), 'Mirando las estrellas por el telescopio'); sitio(4, 12.2, -5.3, mira(12.2, -5.3, 11.5, -6.2), 'Girando el globo celeste');
+sitio(0, 5, -6.2, Math.PI, 'Picando algo en las cocinas'); sitio(0, 7.6, -1.4, 0, 'Tomando chocolate caliente en las cocinas');
+sitio(0, -14, -6.3, Math.PI, 'Revisando ingredientes'); sitio(0, -1, -6.3, Math.PI, 'Ordenando frascos de pociones');
+sitio(0, 11.5, 0.3, 0.8, 'Rondando la Cámara', ['abogado-diablo']); sitio(0, 13.2, -0.6, Math.PI, 'Mirando el estanque oscuro', ['abogado-diablo']); sitio(0, 15.2, 3, -2.4, 'Tramando en la penumbra', ['abogado-diablo']);
+for (let p = 0; p < 5; p++) for (const x of [-12, -4, 4, 12]) sitio(p, x, 7.35, 0, p === 4 ? 'Contemplando el castillo desde lo alto' : p === 0 ? 'Mirando el lago desde la galería' : 'Asomado a la galería');
+const ocupacion = new Map();
+function permitido(f, s) { const slug = f.a.slug; if (s.solo && !s.solo.includes(slug)) return false;
+  if (slug === 'abogado-diablo') return s.p === 0 && (s.sala === 'camara' || s.sala === 'galeria');
+  if (s.sala === 'camara') return false; if (s.sala === 'despacho' && slug !== 'coordinador' && !s.solo) return false; return true; }
+function pisoDe(f) { return Math.max(0, Math.min(4, Math.round(f.pos.y / ALT))); }
+function locActual(f) { const p = pisoDe(f), x = f.pos.x, z = f.pos.z - baseZ(p);
+  if (Math.abs(f.pos.y - baseY(p)) > 0.25 || x > MX) return { p, x: ESCX, z: 6.6, sala: 'galeria' }; return { p, x, z, sala: salaEn(p, x, z) }; }
+function ruta(d, h) {
+  const pts = [], V = (p, x, z) => mundo(p, x, z);
+  const sala = id => SALA[id], dentro = (L, x) => { const s = sala(L.sala); return Math.min(s.x1 - 0.45, Math.max(s.x0 + 0.45, x)); };
+  if (d.sala === h.sala && d.p === h.p && d.sala !== 'galeria') return [V(h.p, h.x, h.z)];
+  if (d.sala !== 'galeria') { const s = sala(d.sala), xa = dentro(d, d.x + 0.9); pts.push(V(d.p, xa, d.z), V(d.p, xa, 4.6), V(d.p, s.puerta, 5.2), V(d.p, s.puerta, 6.6)); }
+  else pts.push(V(d.p, Math.min(d.x, MX), 6.6));
+  if (d.p !== h.p) { const paso = h.p > d.p ? 1 : -1; for (let q = d.p; q !== h.p + paso; q += paso) pts.push(V(q, ESCX, 6.6)); }
+  if (h.sala !== 'galeria') { const s = sala(h.sala), xa = dentro(h, h.x + 0.9); pts.push(V(h.p, s.puerta, 6.6), V(h.p, s.puerta, 5.2), V(h.p, xa, 4.6), V(h.p, xa, h.z)); }
+  else pts.push(V(h.p, h.x, 6.6));
+  pts.push(V(h.p, h.x, h.z));
+  return pts;
+}
+
+// ================================================================== figuras en escena
+const FIG = {}, HITS = [];
+const etiquetas = $('#etiquetas');
+for (const a of EQ) {
+  const m = mago(a); escena.add(m.raiz); HITS.push(m.hit);
+  const etq = document.createElement('div'); etq.className = 'etq';
+  etq.innerHTML = `<div class="bur"></div><span class="nom"><i class="punto"></i>${a.nombre}</span><div class="mana"><i style="width:100%"></i></div><div class="prog"><i style="width:0"></i></div><span class="pct"></span>`;
+  etiquetas.appendChild(etq); etq.querySelector('.nom').addEventListener('click', () => pintarPerfil(a.slug));
+  const pu = PUESTOS[a.slug];
+  const f = { a, ...m, etq, pos: mundo(pu.p, pu.x, pu.z), ry: 0, ryObj: 0, camino: null, modo: 'libre', estado: null, detalle: '', ultimo: 0, espera: 1 + Math.random() * 6,
+    fase: Math.random() * 10, sitio: null, enFlu: false, habla: 0, chispaT: 0 };
+  FIG[a.slug] = f;
+  // al abrir, la mitad ya anda por el castillo
+  if (a.slug !== 'coordinador' && Math.random() < 0.6) { const libres = SITIOS.filter(s => permitido(f, s) && !ocupacion.has(s.id)); const s = libres[Math.random() * libres.length | 0];
+    if (s) { ocupacion.set(s.id, a.slug); f.sitio = s; f.pos.copy(mundo(s.p, s.x, s.z)); f.ry = f.ryObj = s.ry; f.espera = 5 + Math.random() * 25; } }
+}
+function liberarSitio(f) { if (f.sitio) { if (ocupacion.get(f.sitio.id) === f.a.slug) ocupacion.delete(f.sitio.id); f.sitio = null; } }
+function caminarA(f, destino, ryFinal, vel = 2.4, alLlegar = null) {
+  const pts = ruta(locActual(f), destino); f.camino = { pts, i: 0, vel, ryFinal, alLlegar };
+}
+function flu(f, destino, ryFinal = 0, alLlegar = null) {   // polvos flu: desaparece en llamas verdes y reaparece en su puesto
+  if (f.enFlu) return; f.enFlu = true; f.camino = null;
+  nube(f.pos.clone().add(new THREE.Vector3(0, 0.7, 0)), 0x3CFF7A, 46, 26);
+  setTimeout(() => { f.raiz.visible = false; }, 220);
+  setTimeout(() => { f.pos.copy(mundo(destino.p, destino.x, destino.z)); f.ry = f.ryObj = ryFinal; f.raiz.position.copy(f.pos); f.raiz.visible = true; f.enFlu = false;
+    nube(f.pos.clone().add(new THREE.Vector3(0, 0.7, 0)), 0x3CFF7A, 46, 26); alLlegar?.(); }, 900);
+}
+function enPuesto(f) { const q = PUESTOS[f.a.slug]; return f.pos.distanceTo(mundo(q.p, q.x, q.z)) < 0.3; }
+function irAPuesto(f, prisa = true) {
+  if (f.modo === 'reunion') return; liberarSitio(f); f.modo = 'puesto';
+  if (enPuesto(f) && !f.camino) return; const q = PUESTOS[f.a.slug];
+  if (prisa) flu(f, q, 0); else caminarA(f, q, 0, 3);
+}
+function pasear(f) {
+  const actual = pisoDe(f);
+  const libres = SITIOS.filter(s => permitido(f, s) && !ocupacion.has(s.id));
+  if (!libres.length) { f.espera = 10; return; }
+  const cerca = libres.filter(s => Math.abs(s.p - actual) <= (f.a.slug === 'coordinador' ? 0 : 1));
+  const lista = Math.random() < 0.65 && cerca.length ? cerca : libres; const s = lista[Math.random() * lista.length | 0];
+  liberarSitio(f); ocupacion.set(s.id, f.a.slug); f.sitio = s;
+  caminarA(f, s, s.ry, f.a.slug === 'tareas-rapidas' ? 3.4 : 2.2, () => { f.espera = 14 + Math.random() * 30; });
+}
+function decir(f, txt, ms = 4000) { f.etq.querySelector('.bur').textContent = txt; f.habla = performance.now() + ms; }
+
+// ---------- lechuzas mensajeras
+const LECHUZAS = [];
+function lanzarLechuza(desde, hacia, alLlegar) {
+  const g = new THREE.Group(); const c = esfera(0.16, 0xF2EEE4, 0, 0, 0, g, 10); c.scale.set(1, 1.15, 1.3); esfera(0.11, 0xF2EEE4, 0, 0.14, 0.12, g, 10);
+  for (const s of [-1, 1]) esfera(0.03, 0xF5C542, s * 0.05, 0.17, 0.21, g, 6);
+  const alas = [-1, 1].map(s => { const piv = new THREE.Group(); piv.position.set(s * 0.12, 0.04, 0); g.add(piv); const w = caja(0.42, 0.03, 0.22, 0xE6DFD0, s * 0.21, 0, 0, piv, false); return piv; });
+  caja(0.2, 0.02, 0.14, 0xF5ECD7, 0, -0.18, 0.05, g, false); caja(0.04, 0.025, 0.04, 0xB91C1C, 0, -0.165, 0.05, g, false);
+  g.position.copy(desde); escena.add(g);
+  const medio = desde.clone().lerp(hacia, 0.5); medio.y = Math.max(desde.y, hacia.y) + 5;
+  LECHUZAS.push({ g, alas, a: desde.clone(), b: hacia.clone(), c: medio, t: 0, dur: 1.6 + desde.distanceTo(hacia) / 16, alLlegar });
+}
+function animarLechuzas(dt, t) {
+  for (let i = LECHUZAS.length - 1; i >= 0; i--) { const L = LECHUZAS[i]; L.t += dt / L.dur; const k = Math.min(1, L.t), u = 1 - k;
+    const p = L.a.clone().multiplyScalar(u * u).add(L.c.clone().multiplyScalar(2 * u * k)).add(L.b.clone().multiplyScalar(k * k));
+    const dir = p.clone().sub(L.g.position); if (dir.lengthSq() > 1e-6) L.g.rotation.y = Math.atan2(dir.x, dir.z); L.g.position.copy(p);
+    L.alas.forEach((a, j) => a.rotation.z = (j ? -1 : 1) * Math.sin(t * 22) * 0.8);
+    if (k >= 1) { escena.remove(L.g); LECHUZAS.splice(i, 1); nube(L.b, 0xF3D98B, 10, 12); L.alLlegar?.(); } }
+}
+const LECHUCERIA = mundo(4, 7.5, -6.5, 2);
+
+// ---------- Dumbledore se aparece junto a cada agente para darle su misión
+const colaVisitas = []; let visitando = false;
+function visitar(slug, tarea) { if (!FIG[slug] || slug === 'coordinador') return; colaVisitas.push({ slug, tarea }); if (!visitando) setTimeout(siguienteVisita, 950); visitando = true; }
+function aparecer(f, pos, ry) {
+  nube(f.pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xD6D3F0, 40, 24); f.camino = null; liberarSitio(f);
+  setTimeout(() => f.raiz.visible = false, 180);
+  setTimeout(() => { f.pos.copy(pos); f.ry = f.ryObj = ry; f.raiz.position.copy(pos); f.raiz.visible = true; nube(pos.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xD6D3F0, 40, 24); }, 450);
+}
+function siguienteVisita() {
+  const D = FIG.coordinador, v = colaVisitas.shift();
+  if (!v) { visitando = false; const q = PUESTOS.coordinador; aparecer(D, mundo(q.p, q.x, q.z), 0); D.modo = 'puesto'; return; }
+  const T = FIG[v.slug]; if (T.enFlu || T.camino) { colaVisitas.unshift(v); setTimeout(siguienteVisita, 400); return; }
+  const dur = colaVisitas.length > 2 ? 1900 : 3000; D.modo = 'visita';
+  const frente = new THREE.Vector3(Math.sin(T.ry), 0, Math.cos(T.ry)), lado = new THREE.Vector3(Math.cos(T.ry), 0, -Math.sin(T.ry));
+  const pos = T.pos.clone().addScaledVector(frente, 1.0).addScaledVector(lado, 0.9);
+  aparecer(D, pos, Math.atan2(T.pos.x - pos.x, T.pos.z - pos.z));
+  lanzarLechuza(LECHUCERIA, T.pos.clone().add(new THREE.Vector3(0, 1.9 * (T.escala || 1), 0)));
+  setTimeout(() => decir(D, `${T.a.nombre}, tu misión: ${v.tarea || 'te dejé la carta con los detalles.'}`, dur), 500);
+  setTimeout(() => decir(T, RESPUESTA[v.slug] || '¡Enseguida, profesor!', dur * 0.6), 500 + dur * 0.4);
+  setTimeout(siguienteVisita, 500 + dur);
+}
+
+// ---------- reuniones por tarea
+let reunion = null;
+const GRUPOS = {
+  'Programación': ['arquitectura-software', 'desarrollo-frontend', 'desarrollo-backend', 'pruebas-qa', 'automatizaciones'],
+  'Marketing': ['estratega-marca', 'investigacion-audiencias', 'copywriter', 'contenido-web', 'redes-sociales', 'pauta-digital'],
+  'Academia': ['diseno-instruccional', 'investigacion-tematica', 'laboratorios-ia', 'material-clase', 'lecciones-guiones'],
+  'Video y contenido': ['produccion-video', 'redes-sociales', 'contenido-web', 'direccion-arte', 'diseno-grafico'],
+  'Presentaciones': ['direccion-arte', 'diseno-grafico', 'material-clase', 'estratega-marca', 'diseno-instruccional'],
+  'Investigación': ['investigacion-tematica', 'investigacion-audiencias', 'lecciones-guiones'],
+  'Calidad y riesgos': ['revision-editorial', 'abogado-diablo', 'pruebas-qa'],
+  'Todo el castillo': EQ.map(a => a.slug).filter(s => s !== 'coordinador'),
+};
+function asientos(sala, n) {
+  if (sala === 'menesteres') { const r = n > 11 ? 4.1 : 3.4, cx = MESA_REDONDA.x, cz = MESA_REDONDA.z;
+    return Array.from({ length: n }, (_, i) => { const an = -Math.PI / 2 + Math.PI + i * 2 * Math.PI / n; const x = cx + Math.sin(an) * r, z = cz + Math.cos(an) * r; return { p: 3, x, z, ry: mira(x, z, cx, cz), sala: 'menesteres' }; }); }
+  const lista = [{ p: 1, x: -9.2, z: -5.4, ry: 0, sala: 'comedor' }];
+  for (const z of [-2.6, -1.4, -0.2, 1, 2.2, 3.4]) for (const x of MESAS_COMEDOR) { lista.push({ p: 1, x: x - 0.75, z, ry: Math.PI / 2, sala: 'comedor' }, { p: 1, x: x + 0.75, z, ry: -Math.PI / 2, sala: 'comedor' }); }
+  return lista.slice(0, n);
+}
+function convocarReunion(slugs, sala = null, tema = '') {
+  if (reunion) terminarReunion(true);
+  const lista = ['coordinador', ...new Set(slugs.filter(s => s !== 'coordinador' && FIG[s]))];
+  sala = sala || (lista.length > 12 ? 'comedor' : 'menesteres');
+  const sillas = asientos(sala, lista.length + 6);
+  reunion = { sala, tema, slugs: lista, sillas, libres: sillas.slice(lista.length) };
+  lista.forEach((slug, i) => sentar(FIG[slug], sillas[i]));
+  enfocarPiso(SALA[sala].piso);
+  refrescarPisos();
+}
+function sentar(f, silla) { f.modo = 'reunion'; liberarSitio(f); f.silla = silla; if (f.enFlu) return;
+  if (f.a.slug === 'coordinador') aparecer(f, mundo(silla.p, silla.x, silla.z), silla.ry);
+  else caminarA(f, silla, silla.ry, 4.2); }
+function unirseReunion(slug) { if (!reunion || reunion.slugs.includes(slug) || !FIG[slug]) return; const silla = reunion.libres.shift() || reunion.sillas[reunion.sillas.length - 1]; reunion.slugs.push(slug); sentar(FIG[slug], silla); }
+function terminarReunion(silencio = false) {
+  if (!reunion) return; for (const slug of reunion.slugs) { const f = FIG[slug]; f.modo = 'libre'; f.silla = null; f.espera = 1 + Math.random() * 5; }
+  if (!trabajando) { const D = FIG.coordinador; D.espera = 4; }
+  reunion = null; if (!silencio) refrescarPisos();
+}
+function asistentesDe(texto) {
+  const m = String(texto || '').match(/Asistentes:\s*(.+)/i); if (!m) return ['revision-editorial', 'abogado-diablo', 'estratega-marca', 'diseno-instruccional'];
+  const nombres = m[1].split(/[,;y]+\s*/).map(t => t.trim().toLowerCase()).filter(Boolean);
+  return EQ.filter(a => nombres.some(n => n && (a.nombre.toLowerCase() === n || a.nombreCompleto.toLowerCase() === n || a.nombreCompleto.toLowerCase().includes(n)))).map(a => a.slug);
+}
+
+// ================================================================== magia
+const MAGIA = { hoy: {}, total: {} };
+const fmtPM = n => Number(n || 0).toLocaleString('es-CO', { maximumFractionDigits: n < 10 ? 1 : 0 });
+function manaDe(slug) { const res = POR_SLUG[slug]?.reserva || 1500, hoy = MAGIA.hoy[slug] || 0; return { res, hoy, quedan: Math.max(0, res - hoy), pct: Math.max(0, Math.min(100, 100 * (1 - hoy / res))) }; }
+function refrescarMana() {
+  let total = 0; for (const f of Object.values(FIG)) { const m = manaDe(f.a.slug); total += m.hoy; const b = f.etq.querySelector('.mana'); b.querySelector('i').style.width = m.pct + '%'; b.classList.toggle('baja', m.pct < 25); }
+  $('#magiaHoy').textContent = fmtPM(total);
+  for (const r of RELOJES) { const del = EQ.filter(a => a.area === r.area); const res = del.reduce((t, a) => t + (a.reserva || 1500), 0), hoy = del.reduce((t, a) => t + (MAGIA.hoy[a.slug] || 0), 0);
+    const k = Math.max(0.05, 1 - hoy / res); r.malla.scale.y = k; r.malla.position.y = 0.15 + 0.25 * k; }
+  if (perfilAbierto) pintarPerfil(perfilAbierto, true);
+}
+async function cargarMagia() { if (!servidor) return; try { const d = await (await fetch('/magia')).json(); MAGIA.hoy = d.hoy || {}; MAGIA.total = d.total || {}; refrescarMana(); } catch {} }
+function gastoFlotante(f, gasto) {
+  const el = document.createElement('div'); el.className = 'chispa'; el.textContent = `−${fmtPM(gasto)} ✨`; const v = f.pos.clone(); v.y += 2.3 * (f.escala || 1); v.project(camara);
+  el.style.left = (v.x + 1) / 2 * innerWidth + 'px'; el.style.top = (1 - v.y) / 2 * innerHeight + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1900);
+  for (let i = 0; i < 8; i++) chispa(f.pos.clone().add(new THREE.Vector3(0, 1.9 * (f.escala || 1), 0)), 0x9F7AEA, [0, 1.2, 0], 9, 1.1, 0.4);
+}
+
+// ================================================================== estado de la oficina
+let servidor = false, trabajando = false, inicioTrabajo = 0, esperandoBriefing = false, esperandoReunion = false, demoActivo = false, ultimaSalida = null;
+const conversacion = [];
+const ACTIVOS = new Set(['pensando', 'leyendo', 'escribiendo', 'buscando', 'ejecutando', 'delegando', 'revisando', 'llegando']);
+const COLOR_HECHIZO = { buscando: 0x7DD3FC, leyendo: 0xF5ECD7, escribiendo: 0xF3D98B, ejecutando: 0x3CFF7A, revisando: 0xC4B5FD, pensando: 0xE9D5FF, delegando: 0xF3D98B, llegando: 0xF3D98B };
+function activo(f) { return ACTIVOS.has(f.estado) && performance.now() - f.ultimo < 180000; }
+function situacion(f) {
+  if (f.camino) return 'camina'; if (f.modo === 'reunion') return 'reunion'; if (f.estado === 'error') return 'error';
+  if (f.estado === 'esperando' && (f.a.slug !== 'coordinador' || esperandoBriefing || esperandoReunion)) return 'espera';
+  if (activo(f)) return 'trabaja'; if (f.modo === 'libre') return 'pausa'; return 'puesto';
+}
+function textoSituacion(f, s) { return s === 'pausa' && f.sitio ? f.sitio.texto : s === 'camina' ? (f.sitio ? `Caminando: ${f.sitio.texto.toLowerCase()}` : 'Caminando por el castillo') : PUNTO[s][1]; }
+function figuraDe(slug) { return FIG[slug] || FIG.coordinador; }
+function aplicar(ev) {
+  registrarAccion(ev);
+  if (ev.tipo === 'plan') return;
+  if (ev.tipo === 'magia') { if (ev.repeticion) return; MAGIA.hoy[ev.agente] = ev.hoy; MAGIA.total[ev.agente] = { ...(MAGIA.total[ev.agente] || {}), pm: ev.total, tareas: ev.tareas };
+    if (ev.gasto > 0.05 && FIG[ev.agente]) gastoFlotante(FIG[ev.agente], ev.gasto); refrescarMana(); return; }
+  if (ev.tipo === 'agente' || !ev.tipo) {
+    if (ev.repeticion && (Date.now() / 1000 - (ev.ts || 0)) > 120) return;
+    const f = figuraDe(ev.agente); f.ultimo = performance.now();
+    if (ev.estado) f.estado = ev.estado; if (ev.detalle) f.detalle = ev.detalle;
+    if (reunion && !ev.repeticion && f.a.slug !== 'coordinador' && ev.estado && ev.estado !== 'terminado') unirseReunion(f.a.slug);
+    if (ev.destino && FIG[ev.destino] && ev.estado === 'delegando' && !ev.repeticion) {
+      const T = FIG[ev.destino]; T.ultimo = performance.now(); T.estado = 'llegando'; T.detalle = 'Recibió su misión';
+      if (reunion) unirseReunion(ev.destino); else { irAPuesto(T, true); visitar(ev.destino, ev.tarea); }
+    }
+    if (ev.estado === 'terminado' && f.modo !== 'reunion') {
+      const marca = f.ultimo; if (f.a.slug !== 'coordinador') lanzarLechuza(f.pos.clone().add(new THREE.Vector3(0, 1.8, 0)), mundo(4, -10, -4.5, 1.8));
+      setTimeout(() => { if (f.ultimo === marca && !(f.a.slug === 'coordinador' && (trabajando || esperandoBriefing))) { f.modo = 'libre'; f.espera = 2 + Math.random() * 8; } }, 8000);
+    } else if (ev.estado && ACTIVOS.has(ev.estado) && f.modo !== 'reunion' && !(f.a.slug === 'coordinador' && visitando) && f.modo !== 'puesto') irAPuesto(f, true);
+    if (perfilAbierto === f.a.slug) pintarPerfil(f.a.slug, true);
+  } else if (ev.tipo === 'orden') {
+    trabajando = true; inicioTrabajo = Date.now(); esperandoBriefing = false; ocultarTarjeta(); botones();
+    const D = FIG.coordinador; D.estado = 'pensando'; D.detalle = 'Leyendo tu pedido'; D.ultimo = performance.now();
+    if (ev.reunion) { if (!reunion) convocarReunion(asistentesDe(ev.texto)); }
+    else { if (reunion) terminarReunion(); if (!visitando) irAPuesto(D, true); }
+  } else if (ev.tipo === 'dice') {
+    if (!ev.repeticion) { agregarMensaje('Dumbledore', ev.texto); if (!visitando) decir(FIG.coordinador, corto(ev.texto, 150), 6000); }
+    const D = FIG.coordinador; D.detalle = corto(ev.texto, 90); D.ultimo = performance.now();
+  } else if (ev.tipo === 'respuesta') {
+    if (ev.repeticion) return;
+    if (ev.salida) ultimaSalida = ev.salida;
+    trabajando = false; botones(); agregarMensaje('Dumbledore', ev.texto);
+    esperandoBriefing = (!!ev.briefing || !!ev.preguntas) && !ev.error;
+    esperandoReunion = !!ev.reunion && !ev.acta && !ev.error;
+    const D = FIG.coordinador;
+    if (ev.reunion && !ev.error) { if (ev.acta) { setTimeout(terminarReunion, 7000); demoActivo = false; } else { D.estado = 'esperando'; D.detalle = 'Te espera en la reunión'; D.ultimo = performance.now(); } }
+    else if (esperandoBriefing) { D.estado = 'esperando'; D.detalle = ev.preguntas ? 'Tiene preguntas para ti' : 'Espera que confirmes el briefing'; D.ultimo = performance.now(); if (!visitando) irAPuesto(D, true);
+      decir(D, ev.preguntas ? 'Antes de empezar, necesito entenderte bien.' : '¿Confirmamos el plan?', 5000); }
+    else { const eraDemo = demoActivo; demoActivo = false; D.estado = 'terminado'; decir(D, ev.error ? 'Algo no salió bien…' : '¡Listo! Tu entrega está en salidas/.', 5000);
+      setTimeout(() => { if (!trabajando) for (const f of Object.values(FIG)) if (f.modo === 'puesto') { f.modo = 'libre'; f.espera = 2 + Math.random() * 10; } }, 9000);
+      if (servidor && !eraDemo) setTimeout(cargarMagia, 1500); }
+    mostrarTarjeta(ev);
+  }
+}
+function corto(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+function esc(t) { return String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function md(t) {
+  const lineas = esc(t).replace(/```[a-z]*\n?/g, '').split('\n'); let html = '', lista = false;
+  for (let l of lineas) {
+    if (!/^\s*\|/.test(l) && html.endsWith('</tr>')) html += '</table>';
+    l = l.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    const num = l.match(/^\s*(\d+)\.\s+(.*)/);
+    if (num) { if (lista) { html += '</ul>'; lista = false; } html += `<p style="padding-left:26px;text-indent:-26px"><b>${num[1]}.</b> ${num[2]}</p>`; continue; }
+    const li = l.match(/^\s*[-*]\s+(.*)/);
+    if (li) { if (!lista) { html += '<ul>'; lista = true; } html += `<li>${li[1]}</li>`; continue; }
+    if (lista) { html += '</ul>'; lista = false; }
+    const h = l.match(/^(#{1,4})\s+(.*)/);
+    if (/^\s*\|/.test(l)) { if (/^[\s|:-]+$/.test(l)) continue; const celdas = l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()); const cab = !html.endsWith('</tr>');
+      html += (cab ? '<table style="border-collapse:collapse;width:100%;font-size:12px;margin:6px 0">' : '') + '<tr>' + celdas.map(c => `<${cab ? 'th' : 'td'} style="border:1px solid var(--linea);padding:4px 6px;text-align:left;vertical-align:top">${c}</${cab ? 'th' : 'td'}>`).join('') + '</tr>'; continue; }
+    if (h) html += `<h4 style="margin:10px 0 4px;font-family:Cinzel,serif;color:var(--tinta);font-size:15px">${h[2]}</h4>`;
+    else if (/^&gt;\s?/.test(l)) html += `<p style="border-left:3px solid var(--oro);padding-left:10px;color:var(--gris)">${l.replace(/^&gt;\s?/, '')}</p>`;
+    else if (l.trim()) html += `<p>${l}</p>`;
+  }
+  return html + (html.endsWith('</tr>') ? '</table>' : '') + (lista ? '</ul>' : '');
+}
+function estadoTexto() {
+  const el = $('#estado'), sp = el.querySelector('span'); const activos = Object.values(FIG).filter(activo).length;
+  el.className = trabajando ? 'trabajando' : servidor ? 'vivo' : 'demo';
+  if (trabajando) { const s = Math.floor((Date.now() - inicioTrabajo) / 1000); sp.textContent = `Trabajando · ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')} · ${activos} lanzando hechizos`; }
+  else if (esperandoBriefing) sp.textContent = 'Dumbledore espera tu respuesta';
+  else if (reunion) sp.textContent = `Reunión en ${SALA[reunion.sala].nombre.split(' · ')[0]} · ${reunion.slugs.length} asistentes`;
+  else sp.textContent = servidor ? 'Conectado a Claude Code · el castillo descansa' : 'Modo demo (sin servidor)';
+}
+setInterval(estadoTexto, 1000);
+
+// ================================================================== tarjeta de Dumbledore
+function mostrarTarjeta(ev) {
+  const acta = ev.reunion && ev.acta, preguntaReunion = ev.reunion && !ev.acta && !ev.error, preguntas = !!ev.preguntas && !ev.error;
+  $('#tarjetaSub').textContent = preguntas ? 'Primero necesito entender bien lo que necesitas' : ev.briefing ? 'Antes de empezar, acordemos la misión' : ev.error ? 'Hubo un problema' : preguntaReunion ? 'Reunión de ideas' : (acta ? 'Acta de la reunión' : 'Misión cumplida') +
+    (ev.duracion != null ? ` · ${Math.floor(ev.duracion / 60)}m ${ev.duracion % 60}s` : '') + (ev.costo ? ` · ~US$${Number(ev.costo).toFixed(3)}` : '');
+  let texto = ev.texto;
+  if (preguntas) texto = texto.split('\n').filter(l => !/^\s*PREGUNTAS\s*$/i.test(l)).join('\n');
+  if (ev.briefing) {
+    const casillas = [...texto.matchAll(/^\s*-\s*\[([ xX])\]\s*(.+?)\s*$/gm)].map(m => ({ marcada: m[1] !== ' ', texto: m[2] }));
+    const toma = re => { const c = casillas.find(q => re.test(q.texto)); if (c) c.usada = true; return !!(c && c.marcada); };
+    $('#fPpt').checked = toma(/PPT|presentaci/i); $('#fWord').checked = toma(/\bWord\b|docx/i); $('#fJson').checked = toma(/JSON/i);
+    const extra = casillas.filter(q => !q.usada);
+    $('#opcionalesLista').innerHTML = extra.map(q => `<label><input type="checkbox" class="fOpc" data-txt="${esc(q.texto)}" ${q.marcada ? 'checked' : ''}> ${esc(q.texto)}</label>`).join('');
+    $('#opcionales').style.display = extra.length ? 'block' : 'none';
+    texto = texto.split('\n').filter(l => !/^\s*-\s*\[[ xX]\]/.test(l) && !/^Formatos adicionales/i.test(l) && !/^Opcionales\b/i.test(l) && !/^Siempre recibes/i.test(l) && !/^\s*BRIEFING\s*$/i.test(l)).join('\n');
+    const niveles = {}; let recomendado = 'profesional';
+    texto = texto.split('\n').filter(l => { const m = l.match(/^\s*[-*]\s*\**\s*(Básico|Basico|Profesional|Experto)\b\**([^:]*):\s*(.*)$/i);
+      if (m) { const k = m[1].toLowerCase().replace('á', 'a'); niveles[k] = m[3].replace(/\s*·\s*(Haiku|Sonnet|Opus)\b.*$/i, ''); if (/recomendad/i.test(m[2] + m[3])) recomendado = k; return false; }
+      return !/^\s*Nivel de profundidad/i.test(l); }).join('\n');
+    pintarNiveles(niveles, recomendado);
+  }
+  $('#tarjetaTxt').innerHTML = md(texto);
+  if (acta) { $('#fPpt').checked = $('#fWord').checked = $('#fJson').checked = false; }
+  $('#formatos').style.display = ev.briefing || acta ? 'block' : 'none'; if (!ev.briefing) $('#opcionales').style.display = 'none';
+  $('#nivelesBox').style.display = ev.briefing ? 'block' : 'none';
+  $('#ajustes').style.display = ev.briefing ? 'block' : 'none'; $('#ajustes').value = '';
+  $('#respuestas').style.display = preguntas ? 'block' : 'none'; $('#respuestas').value = '';
+  const pie = $('#tarjetaPie'); pie.innerHTML = '';
+  const boton = (txt, cls, fn) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = txt; b.onclick = fn; pie.appendChild(b); };
+  if (preguntas) {
+    boton('Enviar respuestas', 'prim', () => { const r = $('#respuestas').value.trim(); if (!r) { $('#respuestas').focus(); $('#respuestas').placeholder = 'Escribe al menos una respuesta, o pulsa «Que decida Dumbledore».'; return; } enviar('Respuestas:\n' + r, false); });
+    boton('Que decida Dumbledore', 'amar', () => enviar('Decide tú: toma la lectura más razonable de mi pedido y propón el briefing.', false));
+  } else if (ev.briefing) {
+    boton('Confirmar y empezar', 'prim', () => { const aj = $('#ajustes').value.trim(); aplicarModeloNivel(); enviar('Respuestas al briefing: confirmo la propuesta.' + (aj ? ' Ajustes: ' + aj + '.' : '') + lineaNivel() + lineaFormatos(), false); });
+    boton('Que decida Dumbledore', 'amar', () => { aplicarModeloNivel(); enviar('Decide tú: usa tu propuesta.' + lineaNivel() + lineaFormatos(), false); });
+  } else if (acta) {
+    boton('Ver el acta', 'prim', () => { ocultarTarjeta(); abrirSalidas(ev.salida || null); });
+    boton('Generar formatos marcados', 'amar', () => { if (!$('#fPpt').checked && !$('#fJson').checked && !$('#fWord').checked) { $('#formatos b').textContent = 'Marca al menos un formato:'; return; }
+      enviar('Entrega el acta de la reunión en estos formatos (sin briefing, con Dean y en la misma carpeta de la reunión).' + lineaFormatos(), false); });
+    boton('Desarrollar una idea', 'sec', () => { ocultarTarjeta(); const t = $('#pedido'); t.value = '/pedido Desarrolla la idea #1 del acta de la última reunión: '; t.focus(); });
+  } else if (preguntaReunion) boton('Responder', 'prim', () => { ocultarTarjeta(); $('#pedido').focus(); });
+  else { boton(ev.salida ? `📦 Ver salidas (${ev.salida})` : '📦 Ver salidas', 'prim', () => { ocultarTarjeta(); abrirSalidas(ev.salida || null); });
+    boton('Resumen del pedido', 'sec', () => { ocultarTarjeta(); abrirResultados(true); }); boton('Cerrar', 'sec', ocultarTarjeta); }
+  $('#formatos b').textContent = acta ? '¿Quieres el acta en otro formato?' : '¿Necesitas algo más además de los documentos?';
+  $('#tarjeta').classList.add('visible'); $('#tarjetaCuerpo').scrollTop = 0;
+}
+const MODELO_NIVEL = { basico: 'haiku', profesional: 'sonnet', experto: 'opus' }, RANGO = { haiku: 1, sonnet: 2, opus: 3 }, NOMBRE_NIVEL = { basico: 'Básico', profesional: 'Profesional', experto: 'Experto' };
+function pintarNiveles(niveles, recomendado) {
+  const caja = $('#nivelesBox'); const desc = { basico: 'Borrador rápido.', profesional: 'Listo para usar, con investigación en fuentes públicas.', experto: 'Exhaustivo, con doble revisión.' };
+  caja.innerHTML = '<b>¿Qué tan completo lo quieres?</b>' + ['basico', 'profesional', 'experto'].map(k =>
+    `<label style="align-items:flex-start"><input type="radio" name="nivel" value="${k}" ${k === recomendado ? 'checked' : ''} style="margin-top:3px"><span><b style="display:inline;margin:0">${NOMBRE_NIVEL[k]}${k === recomendado ? ' (recomendado)' : ''}</b> · ${esc(niveles[k] || desc[k])}</span></label>`).join('') +
+    `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><span>Modelo:</span><select id="nivelModelo" style="border:1px solid var(--linea);border-radius:8px;padding:4px 6px;font:inherit;font-size:13px"><option value="haiku">Haiku</option><option value="sonnet">Sonnet</option><option value="opus">Opus</option></select><small id="avisoModelo" style="margin:0"></small></div>`;
+  const sel = $('#nivelModelo');
+  const avisar = () => { const n = nivelElegido(), rec = MODELO_NIVEL[n]; const bajo = RANGO[sel.value] < RANGO[rec];
+    $('#avisoModelo').innerHTML = bajo ? `<span style="color:#B45309">⚠ Para ${NOMBRE_NIVEL[n]} se recomienda ${rec[0].toUpperCase() + rec.slice(1)}.</span>` : `Recomendado para ${NOMBRE_NIVEL[n]}.`; };
+  caja.querySelectorAll('input[name=nivel]').forEach(r => r.onchange = () => { sel.value = MODELO_NIVEL[nivelElegido()]; avisar(); });
+  sel.onchange = avisar; sel.value = MODELO_NIVEL[recomendado]; avisar();
+}
+function nivelElegido() { return document.querySelector('input[name=nivel]:checked')?.value || 'profesional'; }
+function aplicarModeloNivel() { const m = $('#nivelModelo')?.value; if (m) { selModelo.value = m; try { localStorage.setItem('hogwarts-modelo', m); } catch {} } }
+function lineaNivel() { return `\nNivel: ${NOMBRE_NIVEL[nivelElegido()]}.`; }
+function lineaFormatos() {
+  const f = []; if ($('#fPpt').checked) f.push('presentación PPT'); if ($('#fWord').checked) f.push('documento Word'); if ($('#fJson').checked) f.push('JSON para otra IA');
+  const opc = [...document.querySelectorAll('.fOpc:checked')].map(c => c.dataset.txt), noOpc = [...document.querySelectorAll('.fOpc:not(:checked)')].map(c => c.dataset.txt);
+  return `\nFormatos: ${f.length ? f.join(', ') : 'ninguno adicional'}.` + (opc.length || noOpc.length ? `\nOpcionales: ${opc.length ? opc.join(', ') : 'ninguno'}${noOpc.length ? ' (no incluir: ' + noOpc.join(', ') + ')' : ''}.` : '');
+}
+function ocultarTarjeta() { $('#tarjeta').classList.remove('visible'); }
+$('#tarjetaCerrar').onclick = ocultarTarjeta;
+
+// ================================================================== panel lateral
+let perfilAbierto = null;
+function abrirPanel(titulo, sub, cuerpo, icono = '', area = '') {
+  $('#panelTitulo').textContent = titulo; $('#panelSub').textContent = sub; $('#panelCuerpo').innerHTML = cuerpo; $('#panelIcono').innerHTML = icono; $('#panelArea').innerHTML = area;
+  $('#panel').classList.add('abierto');
+  document.querySelectorAll('#panelCuerpo [data-pedido]').forEach(b => b.onclick = () => { cerrarPanel(); const t = $('#pedido'); t.value = b.dataset.pedido; t.focus(); });
+  document.querySelectorAll('#panelCuerpo [data-slug]').forEach(b => b.onclick = () => pintarPerfil(b.dataset.slug));
+}
+function cerrarPanel() { $('#panel').classList.remove('abierto'); perfilAbierto = null; }
+$('#cerrar').onclick = cerrarPanel;
+function cajaMagia(slug) {
+  const m = manaDe(slug), t = MAGIA.total[slug] || {};
+  return `<div class="magia-caja"><div class="fila"><span>Puntos de magia disponibles hoy</span><b>${fmtPM(m.quedan)} / ${fmtPM(m.res)}</b></div>
+    <div class="barra-mana${m.pct < 25 ? ' baja' : ''}"><i style="width:${m.pct}%"></i></div>
+    <div class="fila"><span>Gastó hoy: <b style="font-size:13px">${fmtPM(m.hoy)} PM</b></span><span>Histórico: <b style="font-size:13px">${fmtPM(t.pm || 0)} PM</b> · ${t.tareas || 0} misiones</span></div>
+    ${t.entrada != null ? `<small>Tokens: ${(t.entrada || 0).toLocaleString('es-CO')} de entrada · ${(t.salida || 0).toLocaleString('es-CO')} de salida · ${(t.cache_leida || 0).toLocaleString('es-CO')} de caché leída · ${(t.cache_escrita || 0).toLocaleString('es-CO')} de caché escrita</small>` : ''}
+    <small>1 PM ≈ 1.000 tokens ponderados por su costo (la salida vale ×5 y la caché leída ×0,1). La reserva se recarga cada día.</small></div>`;
+}
+function pintarPerfil(slug, refresco = false) {
+  const a = POR_SLUG[slug], f = FIG[slug]; if (!a) return;
+  if (refresco && perfilAbierto !== slug) return;
+  perfilAbierto = slug;
+  const s = situacion(f), color = PUNTO[s][0], txt = textoSituacion(f, s);
+  const detalle = s === 'trabaja' ? `${ESTADOS[f.estado] || 'Trabajando'}${f.detalle ? ' · ' + f.detalle : ''}` : s === 'pausa' ? 'Cuando Dumbledore le asigne una misión, vuelve a su puesto con polvos flu.' : (f.detalle || '');
+  const pu = PUESTOS[slug], sala = SALA[pu.sala];
+  const y = $('#panelCuerpo').scrollTop;
+  abrirPanel(a.nombreCompleto, a.cargo,
+    `<div class="estado-ag"><i class="punto" style="background:${color}"></i><div><b>${esc(txt)}</b>${detalle ? '<br>' + esc(detalle) : ''}<br><small style="color:var(--gris)">Está en: ${esc(PISOS[pisoDe(f)].nombre)}</small></div></div>
+     ${cajaMagia(slug)}
+     <h4>Mini bio</h4><p style="margin:0">${esc(a.bio)}</p>
+     <h4>Qué hace</h4><ul>${a.hace.map(h => `<li>${esc(h)}</li>`).join('')}</ul>
+     <h4>Cómo lo hace</h4><p style="margin:0">${esc(a.como)}</p>
+     <h4>Qué entrega</h4><p style="margin:0">${esc(a.entrega)}</p>
+     <h4>Dónde trabaja</h4><p style="margin:0">${esc(sala.nombre)} · ${esc(PISOS[pu.p].nombre)} (piso ${pu.p})</p>
+     <h4>Modelo</h4><p style="margin:0">Usa el modelo que elijas en el briefing: Haiku (básico), Sonnet (profesional) u Opus (experto).</p>
+     <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" id="pedirle">${slug === 'coordinador' ? 'Hacer un pedido' : 'Pedirle algo a ' + esc(a.nombre)}</button><button class="btn sec" id="verlo">Ir a verlo</button></div>`,
+    foto(slug),
+    `<span class="etiqueta-area area-${a.area}">${AREA_TXT[a.area]}</span>` + (a.coordina ? ` <span class="etiqueta-area" style="background:#4B2A7B;color:#F3D98B">Coordina ${AREA_TXT[a.coordina]}</span>` : ''));
+  if (refresco) $('#panelCuerpo').scrollTop = y;
+  $('#pedirle').onclick = () => { cerrarPanel(); const t = $('#pedido'); t.value = slug === 'coordinador' ? '/pedido ' : `/pedido Que ${a.nombre} (${a.cargo.split(' · ')[0].toLowerCase()}) `; t.focus(); };
+  $('#verlo').onclick = () => volarCamara(f.pos.clone().add(new THREE.Vector3(0, 1, 0)), 3.2);
+}
+function abrirElenco() {
+  perfilAbierto = null; const orden = ['direccion', 'marketing', 'academia', 'produccion', 'tecnologia'];
+  abrirPanel('📜 Elenco de Hogwarts IA', `${EQ.length} agentes · toca a cualquiera para ver su perfil`,
+    orden.map(ar => `<h4>${AREA_TXT[ar]}</h4>` + EQ.filter(a => a.area === ar).map(a => { const f = FIG[a.slug], s = situacion(f);
+      return `<div class="persona" data-slug="${a.slug}">${foto(a.slug, true)}<div><b>${esc(a.nombreCompleto)}</b><small><i class="punto" style="background:${PUNTO[s][0]}"></i>${esc(a.cargo)}</small></div></div>`; }).join('')).join(''));
+}
+function abrirMagia() {
+  perfilAbierto = null; const filas = EQ.map(a => ({ a, m: manaDe(a.slug), t: MAGIA.total[a.slug] || {} })).sort((x, y) => y.m.hoy - x.m.hoy || (y.t.pm || 0) - (x.t.pm || 0));
+  const hoy = filas.reduce((t, r) => t + r.m.hoy, 0), hist = filas.reduce((t, r) => t + (r.t.pm || 0), 0);
+  abrirPanel('✨ Puntos de magia', 'Los tokens que gasta cada agente, convertidos en magia',
+    `<div class="magia-caja"><div class="fila"><span>Gastado hoy en el castillo</span><b>${fmtPM(hoy)} PM</b></div><div class="fila"><span>Histórico</span><span><b style="font-size:14px">${fmtPM(hist)} PM</b></span></div>
+     <small>1 punto de magia (PM) ≈ 1.000 tokens ponderados por su costo real: entrada ×1, caché escrita ×1,25, caché leída ×0,1 y salida ×5. Cada agente tiene una reserva diaria que se recarga a medianoche; si se agota, sigue trabajando, pero su barra se pone roja para que lo notes. Se cuentan los pedidos que haces desde el castillo y también los de Claude Code en la terminal dentro de esta carpeta (con el castillo encendido).</small></div>
+     <h4>Por agente</h4>` + filas.map(({ a, m, t }) => `<div class="fila-magia" data-slug="${a.slug}">${foto(a.slug, true)}<div><b>${esc(a.nombre)}</b> <small>· hoy ${fmtPM(m.hoy)} de ${fmtPM(m.res)} PM · histórico ${fmtPM(t.pm || 0)} · ${t.tareas || 0} misiones</small>
+       <div class="barra-mana${m.pct < 25 ? ' baja' : ''}"><i style="width:${m.pct}%"></i></div></div></div>`).join(''),
+    `<div class="avatar" style="background:#2A1F52">✨</div>`);
+}
+function abrirSala(id) {
+  perfilAbierto = null; const s = SALA[id];
+  const trabajan = Object.entries(PUESTOS).filter(([, q]) => q.sala === id).map(([slug]) => slug);
+  const aqui = Object.values(FIG).filter(f => { const L = locActual(f); return L.p === s.piso && L.sala === id; }).map(f => f.a.slug);
+  const fila = slug => { const f = FIG[slug], st = situacion(f); return `<div class="persona" data-slug="${slug}">${foto(slug, true)}<div><b>${esc(POR_SLUG[slug].nombreCompleto)}</b><small><i class="punto" style="background:${PUNTO[st][0]}"></i>${esc(textoSituacion(f, st))}</small></div></div>`; };
+  abrirPanel(s.nombre, `${PISOS[s.piso].nombre} · piso ${s.piso}`,
+    `<p style="margin-top:0">${esc(s.desc)}</p>` +
+    (trabajan.length ? `<h4>Trabajan aquí</h4>${trabajan.map(fila).join('')}` : '') +
+    (aqui.filter(x => !trabajan.includes(x)).length ? `<h4>Ahora andan por aquí</h4>${aqui.filter(x => !trabajan.includes(x)).map(fila).join('')}` : '') +
+    (s.reunion ? `<h4>Reuniones</h4><button class="btn amar" id="convocarAqui">🕯 Convocar una reunión aquí</button>` : '') +
+    (s.botones ? `<h4>Entregas</h4><button class="btn prim" id="salidasAqui">📦 Ver salidas</button>` : '') +
+    (s.acciones.length ? `<h4>Pídele a Dumbledore</h4>${s.acciones.map(PEDIR).join('')}` : ''),
+    `<div class="avatar">🏰</div>`, `<span class="etiqueta-area area-${s.area}">${AREA_TXT[s.area]}</span>`);
+  $('#convocarAqui')?.addEventListener('click', () => abrirConvocar(id));
+  $('#salidasAqui')?.addEventListener('click', () => abrirSalidas());
+}
+function abrirConvocar(salaPref = 'menesteres') {
+  perfilAbierto = null;
+  const marcados = new Set(reunion ? reunion.slugs : []);
+  abrirPanel('🕯 Convocar reunión', 'Reúne a los agentes por tarea',
+    `<div class="conv"><p style="margin-top:0">Elige un equipo (o marca a quien quieras). Dumbledore siempre modera. Puedes solo reunirlos para verlos juntos (no gasta magia) o hacer una lluvia de ideas con acta priorizada.</p>
+     <h4>Equipos por tarea</h4><div class="grupos">${Object.keys(GRUPOS).map(g => `<button data-grupo="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+     <h4>Asistentes</h4><div class="lista">${EQ.filter(a => a.slug !== 'coordinador').map(a => `<label><input type="checkbox" class="cAsis" value="${a.slug}" ${marcados.has(a.slug) ? 'checked' : ''}> ${esc(a.nombre)}</label>`).join('')}</div>
+     <h4>Lugar</h4><select id="cLugar"><option value="menesteres" ${salaPref !== 'comedor' ? 'selected' : ''}>Sala de los Menesteres (hasta 12)</option><option value="comedor" ${salaPref === 'comedor' ? 'selected' : ''}>Gran Comedor (todo el castillo)</option></select>
+     <h4>Tema (para la lluvia de ideas)</h4><input type="text" id="cTema" placeholder="Ej: cómo conseguir 200 inscritos para el webinar sin pauta paga">
+     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn sec" id="cSolo">Solo reunirlos</button><button class="btn prim" id="cIdeas">Lluvia de ideas con acta</button>${reunion ? '<button class="btn sec" id="cFin">Disolver reunión</button>' : ''}</div>
+     <p class="vacio" id="cAviso"></p></div>`, `<div class="avatar">🕯</div>`);
+  document.querySelectorAll('[data-grupo]').forEach(b => b.onclick = () => { const set = new Set(GRUPOS[b.dataset.grupo]); document.querySelectorAll('.cAsis').forEach(c => c.checked = set.has(c.value)); if (set.size > 11) $('#cLugar').value = 'comedor'; });
+  const elegidos = () => [...document.querySelectorAll('.cAsis:checked')].map(c => c.value);
+  $('#cSolo').onclick = () => { const l = elegidos(); if (!l.length) { $('#cAviso').textContent = 'Marca al menos un asistente.'; return; } convocarReunion(l, $('#cLugar').value); cerrarPanel(); };
+  $('#cIdeas').onclick = () => { const l = elegidos(), tema = $('#cTema').value.trim(); if (!l.length || !tema) { $('#cAviso').textContent = 'Marca asistentes y escribe el tema.'; return; }
+    if (trabajando) { $('#cAviso').textContent = 'El castillo está trabajando en otro pedido; espera a que termine.'; return; }
+    convocarReunion(l, $('#cLugar').value, tema); cerrarPanel();
+    const txt = `/reunion ${tema}\nAsistentes: ${l.map(s => POR_SLUG[s].nombre).join(', ')}`;
+    if (!servidor || demoActivo) demoReunion(txt); else enviar(txt, true); };
+  $('#cFin')?.addEventListener('click', () => { terminarReunion(); cerrarPanel(); });
+}
+function agregarMensaje(quien, texto) { conversacion.push({ quien, texto }); if ($('#panel').classList.contains('abierto') && $('#panelTitulo').textContent === 'Conversación') abrirConversacion(); }
+async function abrirConversacion() {
+  perfilAbierto = null;
+  if (servidor && !conversacion.length) { try { (await (await fetch('/conversacion')).json()).forEach(m => conversacion.push({ quien: m.quien, texto: m.texto })); } catch {} }
+  abrirPanel('Conversación', 'Lo que hablaste con Dumbledore en esta sesión',
+    conversacion.length ? conversacion.map(m => `<div class="msg ${m.quien === 'Tú' ? 'yo' : ''}"><b>${esc(m.quien)}</b><div>${esc(m.texto)}</div></div>`).join('') : '<p class="vacio">Aún no hay mensajes. Escríbele a Dumbledore en la barra de abajo.</p>');
+  const c = $('#panelCuerpo'); c.scrollTop = c.scrollHeight;
+}
+const RESULTADOS_DEMO = [{ carpeta: '2026-11-16_programa-landing-webinar (ejemplo)', salida: 'landing-webinar', reporte: '# Landing del webinar\nEjemplo del demo: así se ve un pedido terminado. Con el castillo encendido aquí aparecen tus pedidos reales.',
+  entrega: ['salidas/landing-webinar/index.html', 'salidas/landing-webinar/ARQUITECTURA.md', 'salidas/landing-webinar/informe_pruebas.md'], archivos: ['pedidos/ejemplo/ORDEN.md', 'pedidos/ejemplo/RESUMEN.md'] }];
+const SALIDAS_DEMO = [{ tema: 'landing-webinar', modificado: Date.now() / 1000, archivos: RESULTADOS_DEMO[0].entrega }];
+const ICONO = a => /\.pptx$/i.test(a) ? '📊' : /\.json$/i.test(a) ? '🧩' : /prompt/i.test(a) ? '🎨' : /\.html?$/i.test(a) ? '🌐' : /\.(mp4|mov|webm)$/i.test(a) ? '🎬' : /\.(png|jpe?g|webp|svg)$/i.test(a) ? '🖼' : /fuentes/i.test(a) ? '📚' : /\.(js|ts|py|css|jsx|tsx)$/i.test(a) ? '💻' : '📄';
+const nombreArchivo = a => a.split('/').pop();
+const enDemo = () => !servidor || demoActivo;
+function fechaCorta(seg) { try { return new Date(seg * 1000).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } }
+function chipsArchivos(lista) { return lista.map(a => `<a data-ruta="${esc(a)}">${ICONO(a)} ${esc(nombreArchivo(a))}</a>`).join(''); }
+function activarArchivos() { document.querySelectorAll('#panelCuerpo [data-ruta]').forEach(el => el.onclick = () => abrirArchivo(el.dataset.ruta)); }
+async function abrirSalidas(temaDestacado = null) {
+  perfilAbierto = null; let lista = SALIDAS_DEMO;
+  if (!enDemo()) { try { lista = await (await fetch('/salidas')).json(); } catch {} }
+  if (temaDestacado) lista = [...lista].sort((a, b) => (b.tema === temaDestacado) - (a.tema === temaDestacado));
+  const cuerpo = (!enDemo() ? `<button class="btn sec" id="abrirSalidasCarpeta" style="margin-bottom:14px">Abrir la carpeta salidas en el Finder</button>` : '') +
+    (lista.length ? lista.map(t => `<div class="pedido-res" ${t.tema === temaDestacado ? 'style="border-color:var(--oro);box-shadow:0 0 0 2px #D9B45A55"' : ''}>
+      <h5>📁 ${esc(t.tema)}</h5><div class="vacio" style="margin-bottom:8px">salidas/${esc(t.tema)}/ · ${t.archivos.length} archivo${t.archivos.length === 1 ? '' : 's'} · actualizado ${esc(fechaCorta(t.modificado))}</div>
+      <div class="arch entrega">${chipsArchivos(t.archivos.slice(0, 40))}</div>
+      ${!enDemo() ? `<button class="btn sec" data-tema="${esc(t.tema)}" style="height:34px;font-size:12px;margin-top:4px">Abrir esta carpeta</button>` : ''}</div>`).join('')
+      : '<p class="vacio">Todavía no hay salidas. Cuando el equipo termine un pedido, lo final aparece aquí, en una carpeta por tema.</p>');
+  abrirPanel('📦 Salidas', enDemo() ? 'Ejemplo (modo demo)' : 'Solo lo final de cada pedido, por tema (carpeta salidas/)', cuerpo, `<div class="avatar">📦</div>`);
+  $('#abrirSalidasCarpeta')?.addEventListener('click', () => fetch('/abrir-carpeta?ruta=salidas'));
+  document.querySelectorAll('#panelCuerpo [data-tema]').forEach(el => el.onclick = () => fetch('/abrir-carpeta?ruta=' + encodeURIComponent('salidas/' + el.dataset.tema)));
+  activarArchivos();
+}
+async function abrirResultados(soloUltimo = false) {
+  perfilAbierto = null; let lista = RESULTADOS_DEMO;
+  if (!enDemo()) { try { lista = await (await fetch('/resultados')).json(); } catch {} }
+  const tarjeta = (p, i) => { const entrega = p.entrega || [], resto = p.archivos.filter(a => !entrega.includes(a) && a !== p.resumen_archivo);
+    const titulo = (p.reporte.match(/^#\s+(.+)/m) || [])[1] || p.carpeta;
+    return `<div class="pedido-res"><h5>${esc(titulo)}</h5><div class="vacio" style="margin-bottom:8px">pedidos/${esc(p.carpeta)}</div>
+      <div class="arch entrega">${entrega.length ? chipsArchivos(entrega.slice(0, 40)) : '<span class="vacio">Este pedido aún no tiene salidas.</span>'}</div>
+      ${p.reporte ? `<details ${i === 0 ? 'open' : ''}><summary>Resumen</summary><div class="rep" style="max-height:none;white-space:normal;color:var(--tinta)">${md(p.reporte.replace(/^#\s+.+\n/, ''))}</div></details>` : ''}
+      ${resto.length || p.resumen_archivo ? `<details><summary>Instrucciones y trabajo del equipo (${resto.length + (p.resumen_archivo ? 1 : 0)} archivos)</summary><div class="arch">${chipsArchivos([p.resumen_archivo, ...resto].filter(Boolean))}</div></details>` : ''}
+      ${!enDemo() ? `<button class="btn sec" data-carpeta="${esc(p.carpeta)}" style="height:34px;font-size:12px;margin-top:8px">Abrir carpeta del pedido</button>` : ''}</div>`; };
+  const mostrar = soloUltimo ? lista.slice(0, 1) : lista;
+  abrirPanel('Pedidos', enDemo() ? 'Ejemplo (modo demo)' : (soloUltimo ? 'Tu último pedido' : 'Historial (carpeta pedidos/)'),
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><button class="btn prim" id="irSalidas" style="height:36px">📦 Ver todas las salidas</button></div>` +
+    (mostrar.length ? mostrar.map(tarjeta).join('') : '<p class="vacio">Todavía no hay pedidos.</p>') + (soloUltimo && lista.length > 1 ? `<button class="btn sec" id="verTodos">Ver todos (${lista.length})</button>` : ''));
+  $('#irSalidas').onclick = () => abrirSalidas(); $('#verTodos')?.addEventListener('click', () => abrirResultados(false));
+  document.querySelectorAll('#panelCuerpo [data-carpeta]').forEach(el => el.onclick = () => fetch('/abrir-carpeta?ruta=' + encodeURIComponent('pedidos/' + el.dataset.carpeta)));
+  activarArchivos();
+}
+async function abrirArchivo(ruta) {
+  const nombre = nombreArchivo(ruta);
+  if (enDemo()) { verDoc(nombre, '<p class="vacio">En el modo demo los archivos son de ejemplo y no existen.</p>'); return; }
+  const url = '/archivo?ruta=' + encodeURIComponent(ruta), ver = '/ver/' + ruta.split('/').map(encodeURIComponent).join('/');
+  if (/\.(pptx|docx)$/i.test(ruta)) { location.href = url; return; }
+  if (/\.json$/i.test(ruta)) { const txt = await (await fetch(url)).text(); let bonito = txt; try { bonito = JSON.stringify(JSON.parse(txt), null, 2); } catch {}
+    verDoc(ruta, `<p><a href="${url}&descargar=1">Descargar ${esc(nombre)}</a></p><pre>${esc(bonito)}</pre>`); return; }
+  if (/\.html?$/i.test(ruta)) { window.open(ver, '_blank'); return; }
+  if (/\.(png|jpe?g|svg|webp)$/i.test(ruta)) { verDoc(ruta, `<img src="${url}" style="max-width:100%">`); return; }
+  if (/\.(mp4|mov|webm)$/i.test(ruta)) { verDoc(ruta, `<video src="${ver}" controls style="max-width:100%"></video>`); return; }
+  const txt = await (await fetch(url)).text();
+  verDoc(ruta, (/\.md$/i.test(ruta) ? md(txt) : `<pre>${esc(txt)}</pre>`) + `<p style="margin-top:14px"><a href="${url}&descargar=1">Descargar</a></p>`);
+}
+function verDoc(titulo, html) { $('#visorTitulo').textContent = titulo; $('#visorDoc').innerHTML = html; $('#visor').classList.add('visible'); }
+$('#visorCerrar').onclick = () => $('#visor').classList.remove('visible');
+$('#visor').onclick = e => { if (e.target.id === 'visor') $('#visor').classList.remove('visible'); };
+$('#bResultados').onclick = () => abrirResultados(false); $('#bSalidas').onclick = () => abrirSalidas(); $('#bConversacion').onclick = abrirConversacion;
+$('#bReunion').onclick = () => abrirConvocar(); $('#bElenco').onclick = abrirElenco; $('#bMagia').onclick = abrirMagia;
+$('#bGiro').onclick = () => { controles.autoRotate = !controles.autoRotate; $('#bGiro').classList.toggle('on', controles.autoRotate); };
+
+// ================================================================== enviar pedidos
+const selModelo = $('#modelo');
+try { selModelo.value = localStorage.getItem('hogwarts-modelo') || 'sonnet'; } catch {}
+selModelo.onchange = () => { try { localStorage.setItem('hogwarts-modelo', selModelo.value); } catch {} };
+function botones() { $('#bEnviar').disabled = trabajando; $('#bDetener').disabled = !trabajando; }
+async function enviar(texto, nueva) {
+  texto = texto.trim(); if (!texto || trabajando) return;
+  agregarMensaje('Tú', texto); ocultarTarjeta();
+  if (!servidor || demoActivo) { demo(texto); return; }
+  try { const r = await fetch('/orden', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto, modelo: selModelo.value, nueva }) });
+    if (!r.ok) { const e = await r.json().catch(() => ({})); mostrarTarjeta({ texto: e.error || 'No pude enviar el pedido.', error: true }); } }
+  catch { mostrarTarjeta({ texto: 'No hay conexión con el servidor del castillo. Ábrelo con el ícono.', error: true }); }
+}
+$('#barra').onsubmit = e => { e.preventDefault(); const t = $('#pedido'); enviar(t.value, t.value.trim().startsWith('/') && !esperandoBriefing); t.value = ''; };
+$('#pedido').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#barra').requestSubmit(); } });
+$('#bDetener').onclick = () => {
+  if (servidor && !demoActivo) fetch('/detener', { method: 'POST' });
+  demoTimers.forEach(clearTimeout); demoTimers = []; demoActivo = false; demoPaso = 0; trabajando = false; esperandoBriefing = false; botones();
+  colaVisitas.length = 0; for (const f of Object.values(FIG)) { f.estado = null; if (f.modo === 'puesto') { f.modo = 'libre'; f.espera = Math.random() * 4; } }
+};
+
+// ================================================================== demo simulado (no gasta magia de verdad)
+let demoTimers = [], demoPaso = 0;
+function guion(pasos) { demoTimers.forEach(clearTimeout); demoTimers = []; let acum = 0; for (const [espera, ev] of pasos) { acum += espera; demoTimers.push(setTimeout(() => aplicar({ ...ev, ts: Date.now() / 1000 }), acum)); } }
+const magiaDemo = {};
+function evMagia(slug, gasto) { magiaDemo[slug] = (magiaDemo[slug] || MAGIA.hoy[slug] || 0) + gasto; return { tipo: 'magia', agente: slug, gasto, hoy: magiaDemo[slug], total: magiaDemo[slug], tareas: 1, demo: true }; }
+function demo(texto) {
+  const C = 'coordinador';
+  if (demoPaso === 0 && !/^(Respuestas|Decide tú)/.test(texto)) {
+    demoPaso = 1;
+    guion([[0, { tipo: 'orden', texto }], [1500, { tipo: 'agente', agente: C, estado: 'leyendo', detalle: 'Leyendo tu pedido' }], [400, evMagia(C, 6.2)],
+      [1500, { tipo: 'respuesta', preguntas: true, texto: `PREGUNTAS\nPara hacerlo bien necesito saber:\n1. ¿Para qué es la landing exactamente? (ej.: inscripciones al webinar gratuito de agentes de IA para pymes)\n2. ¿Qué datos debe pedir el formulario? (ej.: nombre, correo, empresa y cargo)\n3. ¿A dónde deben llegar los inscritos? (ej.: una hoja de Google Sheets o un CSV por ahora)\n4. ¿Dónde se va a publicar? (ej.: la subo yo a Netlify; solo necesito los archivos)\n5. ¿Hay textos, fecha u oferta que deban aparecer sí o sí? (ej.: fecha y hora del webinar)\nSi alguna prefieres que la decida yo, escribe "decide tú" al lado.` }]]);
+    return;
+  }
+  if (demoPaso === 1 || (demoPaso === 0 && /^(Respuestas:|Decide tú)/.test(texto) && !/^Respuestas al briefing/.test(texto))) {
+    demoPaso = 2;
+    guion([[0, { tipo: 'orden', texto }], [1400, { tipo: 'agente', agente: C, estado: 'leyendo', detalle: 'Leyendo tus respuestas y conocimiento/niveles.md' }], [600, evMagia(C, 8.4)],
+      [1600, { tipo: 'agente', agente: C, estado: 'pensando', detalle: 'Armando la propuesta: un solo entregable principal' }],
+      [1800, { tipo: 'respuesta', briefing: true, texto: `BRIEFING\nObjetivo: tener una landing lista para publicar que capture inscritos al webinar.\nPúblico: dueños y gerentes de pymes colombianas interesados en IA.\nEntregable principal: una landing de una página (HTML, CSS y JS) con formulario de inscripción validado, que guarda los inscritos en un CSV descargable y deja lista la conexión a Google Sheets.\nIncluye:\n- Arquitectura y plan de tareas (Snape)\n- Interfaz responsive y accesible (Draco) y guardado de inscritos (Bill)\n- Conexión a Google Sheets con las claves como [COMPLETAR] (Arthur)\n- Pruebas ejecutadas con informe (Neville) y revisión de código (Snape)\nNo incluye: publicar la página, dominio ni pauta.\nEquipo: Snape, Draco, Bill, Arthur, Neville, McGonagall (calidad) y Hagrid (entrega).\nNivel de profundidad (elige uno):\n- Básico: prototipo de una página sin pruebas · Haiku · 3–6 min\n- Profesional (recomendado): landing funcional con pruebas e informe · Sonnet · 15–25 min\n- Experto: lo anterior más accesibilidad AA, analítica y ataque de Voldemort · Opus · 30–50 min\nFormatos adicionales (marca los que necesites):\n- [ ] Presentación PPT\n- [ ] Documento Word\n- [ ] JSON para construirlo en otra IA\nOpcionales (solo si los quieres):\n- [ ] Correo de confirmación automático\nSiempre recibes: RESUMEN.md + tus salidas finales en salidas/landing-webinar/.\n¿Confirmas o ajustas algo?` }]]);
+    return;
+  }
+  demoPaso = 0;
+  const ev = [], en = (ms, e) => ev.push([ms, e]), ag = (slug, estado, detalle, extra = {}) => ({ tipo: 'agente', agente: slug, estado, detalle, ...extra }), N = s => POR_SLUG[s].nombre;
+  en(0, { tipo: 'orden', texto }); en(1500, ag(C, 'escribiendo', 'Creando ORDEN.md con el plan por oleadas')); en(2000, evMagia(C, 12));
+  en(3000, { tipo: 'plan', carpeta: '2026-11-16_programa-landing-webinar (demo)', oleadas: [
+    { tipo: 'oleada', n: 1, modo: 'paralelo', agentes: [{ slug: 'arquitectura-software', nombre: 'Snape', tarea: 'arquitectura y plan de tareas', min: 0.1 }] },
+    { tipo: 'oleada', n: 2, modo: 'paralelo', agentes: [{ slug: 'desarrollo-frontend', nombre: 'Draco', tarea: 'interfaz y formulario', min: 0.12 }, { slug: 'desarrollo-backend', nombre: 'Bill', tarea: 'guardado de inscritos', min: 0.1 }, { slug: 'automatizaciones', nombre: 'Arthur', tarea: 'conexión a Google Sheets', min: 0.1 }] },
+    { tipo: 'oleada', n: 3, modo: 'cascada', agentes: [{ slug: 'pruebas-qa', nombre: 'Neville', tarea: 'pruebas ejecutadas; necesita el código', min: 0.08 }] },
+    { tipo: 'revision', n: null, modo: 'paralelo', agentes: [{ slug: 'revision-editorial', nombre: 'McGonagall', tarea: '¿es lo que se pidió?', min: 0.06 }] },
+    { tipo: 'cierre', n: null, modo: 'paralelo', agentes: [{ slug: 'guardabosques', nombre: 'Hagrid', tarea: 'empaca la entrega', min: 0.05 }, { slug: 'coordinador', nombre: 'Dumbledore', tarea: 'integración y entrega', min: 0.06 }] }] });
+  const oleada = (t0, lista) => {
+    lista.forEach(([slug, , , , , tarea], i) => en(t0 + i * 300, ag(C, 'delegando', `Delegando a ${N(slug)}`, { destino: slug, tarea })));
+    let fin = t0;
+    lista.forEach(([slug, a, b, listo, dur], i) => { const t = t0 + 2600 + i * 2200; en(t, ag(slug, 'llegando', 'Empieza su misión')); en(t + 900, ag(slug, /Buscando/.test(a) ? 'buscando' : 'leyendo', a));
+      en(t + 1200, evMagia(slug, 9 + Math.random() * 20)); en(t + 900 + dur / 2, ag(slug, /Ejecut|Corr/.test(b) ? 'ejecutando' : 'escribiendo', b)); en(t + 1000 + dur / 2, evMagia(slug, 15 + Math.random() * 30));
+      en(t + 900 + dur, ag(slug, 'terminado', listo)); fin = Math.max(fin, t + 900 + dur); });
+    en(fin + 500, ag(C, 'revisando', `Revisando la oleada (${lista.map(([s]) => N(s)).join(', ')})`)); return fin + 1600; };
+  let t = oleada(4200, [['arquitectura-software', 'Leyendo ORDEN.md', 'Creando ARQUITECTURA.md', 'Stack: HTML + JS + API mínima; 6 tareas verificables', 5200, 'arquitectura y reparto de tareas']]);
+  t = oleada(t, [['desarrollo-frontend', 'Leyendo ARQUITECTURA.md', 'Creando index.html y estilos.css', 'Landing responsive con formulario validado', 6400, 'la interfaz y el formulario'],
+    ['desarrollo-backend', 'Leyendo ARQUITECTURA.md', 'Creando servidor.py', 'Guarda inscritos en CSV sin duplicados', 5600, 'guardar los inscritos'],
+    ['automatizaciones', 'Buscando: Google Sheets API append values', 'Creando AUTOMATIZACION.md', 'Conexión lista; claves como [COMPLETAR]', 5000, 'la conexión con Google Sheets']]);
+  t = oleada(t, [['pruebas-qa', 'Leyendo el código', 'Ejecutando 14 pruebas', '14 de 14 pruebas pasaron (ejecutadas)', 5200, 'probar todo de verdad']]);
+  en(t, ag(C, 'delegando', 'Delegando a McGonagall', { destino: 'revision-editorial', tarea: 'revisar que sea exactamente lo pedido' }));
+  en(t + 2800, ag('revision-editorial', 'revisando', 'Comprobando la definición de terminado')); en(t + 3300, evMagia('revision-editorial', 14)); en(t + 6200, ag('revision-editorial', 'terminado', 'VEREDICTO: APROBADO'));
+  en(t + 6500, ag(C, 'delegando', 'Delegando a Hagrid', { destino: 'guardabosques', tarea: 'empacar la entrega y escribir el paquete para otros agentes' }));
+  en(t + 9200, ag('guardabosques', 'ejecutando', 'Verificando salidas/landing-webinar/')); en(t + 9600, evMagia('guardabosques', 6)); en(t + 11800, ag('guardabosques', 'terminado', 'Entrega empacada'));
+  en(t + 12400, ag(C, 'escribiendo', 'Creando RESUMEN.md')); en(t + 12800, evMagia(C, 18));
+  en(t + 14000, { tipo: 'respuesta', duracion: Math.round((t + 14000) / 1000), salida: 'landing-webinar', texto: '# Landing del webinar (simulación)\n**Nivel:** Profesional · **Modelo:** sonnet · **Equipo:** Snape, Draco, Bill, Arthur, Neville, McGonagall, Hagrid\n## Lo que te entregamos (salidas/landing-webinar/)\n- index.html, estilos.css, app.js\n- servidor.py (guarda inscritos en CSV)\n- AUTOMATIZACION.md (Google Sheets)\n- informe_pruebas.md (14/14, ejecutadas)\n## Datos que debes completar\n- [COMPLETAR: fecha y hora del webinar]\n- [COMPLETAR: ID de la hoja de Google Sheets]\n## Pendientes\nNinguno.' });
+  en(t + 14000, ag(C, 'terminado', 'Pedido terminado'));
+  ev.sort((x, y) => x[0] - y[0]); let previo = 0; guion(ev.map(([ms, e]) => { const espera = ms - previo; previo = ms; return [espera, e]; }));
+}
+function demoReunion(texto) {
+  demoActivo = true; demoPaso = 0; agregarMensaje('Tú', texto + ' (demo)');
+  const C = 'coordinador', asis = reunion ? reunion.slugs.filter(s => s !== C) : asistentesDe(texto);
+  const pasos = [[0, { tipo: 'orden', texto, reunion: true }], [2200, { tipo: 'agente', agente: C, estado: 'escribiendo', detalle: 'Creando CONVOCATORIA.md' }]];
+  asis.forEach((slug, k) => pasos.push([k ? 600 : 4000, { tipo: 'agente', agente: slug, estado: 'pensando', detalle: 'Pensando ideas desde su especialidad' }]));
+  asis.forEach((slug, k) => { pasos.push([k ? 1300 : 3000, { tipo: 'agente', agente: slug, estado: 'escribiendo', detalle: '💡 Propone una idea' }]); pasos.push([200, evMagia(slug, 5 + Math.random() * 10)]); });
+  pasos.push([2000, { tipo: 'agente', agente: C, estado: 'ejecutando', detalle: 'Priorizando con puntaje ICE' }]);
+  pasos.push([2400, { tipo: 'respuesta', reunion: true, acta: true, duracion: 60, texto: `# Acta de reunión (simulación)\n**Asistentes:** Dumbledore, ${asis.map(s => POR_SLUG[s].nombre).join(', ')}\nEn el modo demo no se generan ideas reales. Con el castillo encendido, cada asistente propone ideas desde su especialidad, Voldemort las ataca y sale un acta priorizada con puntaje ICE.` }]);
+  guion(pasos);
+}
+$('#bDemo').onclick = () => { if (trabajando) return; demoPaso = 0; demoActivo = true; const t = '/programa una landing con formulario de inscripción para el webinar'; agregarMensaje('Tú', t + ' (demo)'); demo(t); };
+
+// ================================================================== ventana "Equipo en acción"
+let planActual = null, progreso = {}, olasVistas = [];
+let eaNivel = 'profesional', eaModelo = 'sonnet', eaCierreInicio = 0, tiemposHist = {};
+const BASE_MIN = { basico: 2, profesional: 6, experto: 14 };
+const FACTOR_AGENTE = { 'investigacion-audiencias': 1.4, 'investigacion-tematica': 1.5, 'estratega-marca': 1.2, 'diseno-grafico': 1.2, 'material-clase': 1.3, 'lecciones-guiones': 1.3,
+  'revision-editorial': 0.6, copywriter: 0.8, 'direccion-arte': 0.7, coordinador: 0.5, 'desarrollo-frontend': 1.5, 'desarrollo-backend': 1.4, 'arquitectura-software': 1.1, 'pruebas-qa': 1.1, 'produccion-video': 1.3, 'tareas-rapidas': 0.4, guardabosques: 0.4 };
+const FACTOR_MODELO = { haiku: 0.6, sonnet: 1, opus: 1.5 };
+function cargarTiempos() { if (servidor) fetch('/tiempos').then(r => r.json()).then(d => { tiemposHist = d || {}; }).catch(() => {}); }
+function itemPlan(slug) { for (const o of planActual?.oleadas || []) for (const a of o.agentes) if (a.slug === slug) return a; return null; }
+function estimado(slug) {
+  const h = tiemposHist[`${slug}|${eaNivel}|${eaModelo}`]; if (h && h.n >= 2) return { seg: h.med, fuente: `historial (${h.n} veces)` };
+  const a = itemPlan(slug); if (a && a.min) return { seg: a.min * 60, fuente: 'estimado de Dumbledore' }; if (h) return { seg: h.med, fuente: 'historial (1 vez)' };
+  return { seg: BASE_MIN[eaNivel] * 60 * (FACTOR_AGENTE[slug] || 1) * (FACTOR_MODELO[eaModelo] || 1), fuente: 'referencia del nivel' };
+}
+function pctDe(slug) { const p = progreso[slug]; if (!p) return 0; if (p.estado === 'listo') return 100;
+  const f = (Date.now() - p.inicio) / 1000 / estimado(slug).seg; const porTiempo = f < 1 ? f * 90 : 90 + 6 * (1 - Math.exp(-(f - 1) * 1.5));
+  const porTrabajo = p.escr ? Math.min(88, 45 + 9 * (p.escr - 1)) : (p.busq + p.lect) ? Math.min(40, 8 + 3 * (p.busq + p.lect)) : 2; return Math.min(97, Math.max(porTiempo, porTrabajo)); }
+function restanteDe(slug) { const p = progreso[slug], est = estimado(slug).seg; if (!p) return est; if (p.estado === 'listo') return 0;
+  const el = (Date.now() - p.inicio) / 1000, pct = pctDe(slug); return el < est ? Math.min(est - el, el * (100 - pct) / Math.max(pct, 1) + 20) : Math.max(20, el * (100 - pct) / pct); }
+function lento(slug) { const p = progreso[slug]; return p && p.estado === 'trabajando' && (Date.now() - p.inicio) / 1000 > estimado(slug).seg * 1.1; }
+function fmtMin(seg) { seg = Math.max(0, Math.round(seg)); return seg < 60 ? `${seg} s` : seg < 3600 ? `${Math.round(seg / 60)} min` : `${Math.floor(seg / 3600)} h ${Math.round(seg % 3600 / 60)} min`; }
+function progresoGeneral() {
+  const sec = planActual?.oleadas; if (!sec) return null; const ahora = Date.now(); let total = 0, hecho = 0, falta = 0;
+  const previasListas = sec.filter(o => o.tipo !== 'cierre').every(o => o.agentes.every(a => progreso[a.slug]?.estado === 'listo')); if (previasListas && trabajando && !eaCierreInicio) eaCierreInicio = ahora;
+  for (const o of sec) { const estO = Math.max(...o.agentes.map(a => estimado(a.slug).seg)); let frac, restO;
+    if (o.tipo === 'cierre') { if (eaFin && !trabajando) { frac = 1; restO = 0; } else if (eaCierreInicio) { const el = (ahora - eaCierreInicio) / 1000; frac = Math.min(0.95, el / estO); restO = Math.max(15, estO - el); } else { frac = 0; restO = estO; } }
+    else { frac = o.agentes.reduce((t, a) => t + pctDe(a.slug) / 100, 0) / o.agentes.length; restO = frac >= 1 ? 0 : Math.max(...o.agentes.map(a => restanteDe(a.slug))); }
+    total += estO; hecho += estO * frac; falta += restO; }
+  return { pct: Math.round(100 * hecho / Math.max(total, 1)), falta, total };
+}
+let eaCerradoManual = false, eaOrdenInicio = 0, eaFin = 0, eaPintando = 0, eaReunion = false;
+function eaTiempo(ms) { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`; }
+function eaEmpieza(slug, t, detalle) { if (!POR_SLUG[slug] || slug === 'coordinador') return; const p = progreso[slug];
+  if (!p) { const activosAhora = Object.entries(progreso).filter(([, q]) => q.estado === 'trabajando').map(([k]) => k); const ultima = olasVistas[olasVistas.length - 1];
+    if (ultima && activosAhora.some(k => ultima.includes(k))) ultima.push(slug); else olasVistas.push([slug]);
+    progreso[slug] = { estado: 'trabajando', inicio: t, detalle: detalle || 'Empieza su misión', busq: 0, lect: 0, escr: 0 }; }
+  else { if (p.estado === 'listo') { p.estado = 'trabajando'; p.fin = null; p.correccion = true; } if (detalle) p.detalle = detalle; } }
+function eaTermina(slug, t, detalle) { const p = progreso[slug]; if (!p) return; p.estado = 'listo'; p.fin = t; if (detalle) p.detalle = detalle; }
+function registrarAccion(ev) {
+  const t = (ev.ts || Date.now() / 1000) * 1000;
+  if (ev.tipo === 'orden') { planActual = null; progreso = {}; olasVistas = []; eaCerradoManual = false; eaOrdenInicio = t; eaFin = 0; eaReunion = !!ev.reunion; eaCierreInicio = 0;
+    if (ev.modelo) eaModelo = ev.modelo; const mn = String(ev.texto || '').match(/Nivel:\s*(B[aá]sico|Profesional|Experto)/i); if (mn) eaNivel = mn[1].toLowerCase().replace('á', 'a'); else if (ev.nivel) eaNivel = ev.nivel; if (!ev.repeticion) cargarTiempos(); }
+  else if (ev.tipo === 'plan') { planActual = ev; if (ev.nivel) eaNivel = ev.nivel; if (ev.modelo) eaModelo = ev.modelo; if (!ev.repeticion) eaAbrir(true); }
+  else if (ev.tipo === 'respuesta') { eaFin = t; if (!ev.repeticion) setTimeout(cargarTiempos, 1500); }
+  else if (ev.tipo === 'agente' || !ev.tipo) { const slug = ev.agente;
+    if (ev.destino && ev.estado === 'delegando') { eaEmpieza(ev.destino, t, ev.tarea || 'Dumbledore le asignó su misión'); if (!ev.repeticion) eaAbrir(true); }
+    if (ev.destino && ev.evento === 'PostToolUse') eaTermina(ev.destino, t);
+    if (slug && slug !== 'coordinador') { if (ev.estado === 'terminado') eaTermina(slug, t, ev.detalle);
+      else if (ACTIVOS.has(ev.estado)) { eaEmpieza(slug, t, ev.detalle); const p = progreso[slug]; if (p && ev.estado === 'buscando') p.busq++; else if (p && ev.estado === 'leyendo') p.lect++; else if (p && ev.estado === 'escribiendo') p.escr++; } } }
+  else return;
+  eaPintar();
+}
+function eaAbrir(auto) { if (auto && eaCerradoManual) return; $('#enAccion').classList.add('visible'); $('#bEnAccion').classList.add('on'); eaPintar(true); }
+function eaCerrar() { $('#enAccion').classList.remove('visible'); $('#bEnAccion').classList.remove('on'); eaCerradoManual = true; }
+$('#bEnAccion').onclick = () => $('#enAccion').classList.contains('visible') ? eaCerrar() : (eaCerradoManual = false, eaAbrir(false));
+$('#eaCerrar').onclick = eaCerrar;
+function eaPunto(estado) { return estado === 'trabajando' ? '<i class="ea-on" style="background:#22C55E"></i>' : estado === 'listo' ? '<i style="background:#4B2A7B"></i>' : '<i style="background:#CBD5E1"></i>'; }
+function eaEstadoTxt(slug) { const p = progreso[slug]; if (!p) return planActual ? `~${fmtMin(estimado(slug).seg)}` : 'pendiente'; return p.estado === 'trabajando' ? `${p.correccion ? 'corrigiendo · ' : ''}${Math.round(pctDe(slug))}%` : `✔ ${eaTiempo(p.fin - p.inicio)}`; }
+function eaOlas() { if (planActual && planActual.oleadas) return { fuente: 'Plan de Dumbledore (ORDEN.md)', olas: planActual.oleadas }; if (!olasVistas.length) return null;
+  return { fuente: 'observada en vivo', olas: olasVistas.map((g, i) => ({ tipo: 'oleada', n: i + 1, modo: g.length > 1 ? 'paralelo' : 'cascada', agentes: g.map(slug => ({ slug, nombre: POR_SLUG[slug].nombre, tarea: '' })) })) }; }
+function eaPintar(ya) {
+  const n = Object.values(progreso).filter(p => p.estado === 'trabajando').length; const gen = trabajando || eaFin ? progresoGeneral() : null;
+  $('#nAccion').textContent = n ? (gen && trabajando ? `${n} · ${gen.pct}%` : n) : '';
+  if (!$('#enAccion').classList.contains('visible')) return;
+  if (!ya) { if (eaPintando) return; eaPintando = requestAnimationFrame(() => { eaPintando = 0; eaPintar(true); }); return; }
+  const ahora = Date.now(), D = FIG.coordinador;
+  $('#eaSub').textContent = trabajando ? `· ${eaTiempo(ahora - eaOrdenInicio)}` : eaFin && eaOrdenInicio ? `· terminó en ${eaTiempo(eaFin - eaOrdenInicio)}` : '';
+  let h = planActual?.carpeta ? `<h5>Pedido <em>${esc(planActual.carpeta)}</em></h5>` : '';
+  if (gen) { const fin = !trabajando && eaFin; h += `<div class="ea-gen"><div class="fila1"><b>${fin ? 100 : gen.pct}%</b><span>progreso general</span><em>${fin ? '✔ Entregado' : `faltan ~${fmtMin(gen.falta)}`}</em></div><div class="ea-barra"><i style="width:${fin ? 100 : gen.pct}%"></i></div></div>`; }
+  h += `<div class="ea-dumb" style="margin-top:8px"><b>Dumbledore</b> · ${esc(trabajando ? (D.detalle || 'Coordinando') : esperandoBriefing ? 'Te espera para confirmar' : eaFin ? 'Entregó el pedido' : 'Esperando un pedido')}</div>`;
+  const activos = Object.entries(progreso).filter(([, p]) => p.estado === 'trabajando');
+  h += `<h5>Ahora trabajando <em>${activos.length}</em></h5>`;
+  h += activos.length ? activos.map(([slug, p]) => { const pct = Math.round(pctDe(slug)), e = estimado(slug), tarea = itemPlan(slug)?.tarea, m = manaDe(slug);
+    return `<div class="ea-fila" data-slug="${slug}">${foto(slug, true)}<div><b>${esc(POR_SLUG[slug].nombre)} <span style="font-weight:400;color:var(--gris)">· ${esc(tarea || POR_SLUG[slug].cargo)}</span></b><small>${esc(FIG[slug]?.detalle || p.detalle || '')}</small>
+      <div class="ea-barra chica${lento(slug) ? ' lenta' : ''}"><i style="width:${pct}%"></i></div><div class="ea-meta"><span><b>${pct}%</b> · ${lento(slug) ? 'más lento de lo estimado' : `faltan ~${fmtMin(restanteDe(slug))}`}</span><span>✨ ${fmtPM(m.hoy)} PM hoy</span></div>
+      <div class="ea-act" title="Estimado: ${esc(e.fuente)}">🔎 ${p.busq} búsquedas · 📖 ${p.lect} lecturas · ✍️ ${p.escr} escrituras</div></div></div>`; }).join('')
+    : `<p class="vacio" style="margin:4px 0">${trabajando ? 'Nadie más por ahora: Dumbledore está organizando o revisando.' : 'Nadie está trabajando en este momento.'}</p>`;
+  const sec = eaOlas(); h += `<h5>Secuencia ${sec ? `<em>${sec.fuente}</em>` : ''}</h5>`;
+  if (!sec) h += `<p class="vacio" style="margin:4px 0">${eaReunion ? 'En las reuniones, las rondas de ideas son en paralelo.' : 'Aparece cuando Dumbledore escribe el plan en ORDEN.md.'}</p>`;
+  else h += sec.olas.map(o => { const est = o.agentes.map(a => a.slug === 'coordinador' ? (eaFin && !esperandoBriefing ? 'listo' : null) : progreso[a.slug]?.estado || null);
+    const listos = est.filter(e => e === 'listo').length, activa = est.includes('trabajando');
+    const nombre = o.tipo === 'oleada' ? `Oleada ${o.n}` : o.tipo === 'revision' ? 'Revisión' : 'Cierre';
+    const modo = o.tipo === 'oleada' ? `<span class="ea-modo ${o.modo}">${o.modo === 'cascada' ? 'en cascada' : o.agentes.length > 1 ? 'en paralelo' : 'sola'}</span>` : '';
+    return `<div class="ea-ola${activa ? ' activa' : ''}"><div class="tit">${nombre} ${modo}<small>${listos}/${o.agentes.length} listos</small></div>` +
+      o.agentes.map((a, i) => `<div class="ea-ag" data-slug="${a.slug}">${eaPunto(est[i])}<b>${esc(a.nombre)}</b><span class="t">${esc(a.tarea || '')}</span><span class="e">${a.slug === 'coordinador' ? (est[i] === 'listo' ? '✔' : 'al final') : eaEstadoTxt(a.slug)}</span></div>`).join('') + '</div>'; }).join('<div class="ea-flecha">↓</div>');
+  const c = $('#eaCuerpo'), y = c.scrollTop; c.innerHTML = h; c.scrollTop = y;
+  c.querySelectorAll('[data-slug]').forEach(el => el.onclick = () => pintarPerfil(el.dataset.slug));
+}
+setInterval(() => {
+  if (trabajando) eaPintar();
+  for (const f of Object.values(FIG)) { const p = progreso[f.a.slug], act = p && p.estado === 'trabajando' && f.a.slug !== 'coordinador'; f.etq.classList.toggle('trabajando', !!act);
+    if (act) { const pct = Math.round(pctDe(f.a.slug)); f.etq.querySelector('.prog i').style.width = pct + '%'; f.etq.querySelector('.prog').classList.toggle('lenta', lento(f.a.slug)); f.etq.querySelector('.pct').textContent = `${pct}% · ~${fmtMin(restanteDe(f.a.slug))}`; } }
+  refrescarPisos();
+}, 1000);
+
+// ================================================================== conexión con el servidor
+function conectar() {
+  if (location.protocol === 'file:') { servidor = false; estadoTexto(); return; }
+  fetch('/estado').then(r => r.json()).then(e => {
+    servidor = true; trabajando = !!e.trabajando; if (trabajando) inicioTrabajo = Date.now(); botones(); estadoTexto(); cargarTiempos(); cargarMagia();
+    if (trabajando) fetch('/plan').then(r => r.json()).then(p => { if (p && p.oleadas && !planActual) { planActual = p; eaAbrir(true); } }).catch(() => {});
+    const fuente = new EventSource('/eventos');
+    fuente.onmessage = m => { try { aplicar(JSON.parse(m.data)); } catch (err) { console.warn(err); } };
+    fuente.onerror = () => { servidor = false; estadoTexto(); }; fuente.onopen = () => { servidor = true; estadoTexto(); };
+  }).catch(() => { servidor = false; estadoTexto(); });
+}
+conectar();
+setInterval(() => { if (servidor) cargarMagia(); }, 60000);
+
+// ================================================================== fotos de cada agente
+const FOTOS = {}; const AREA_FONDO = { marketing: ['#5B1A1A', '#2A0C0C'], academia: ['#1E2E5A', '#0E1630'], direccion: ['#3E2463', '#1A0F30'], tecnologia: ['#1A472A', '#0A2014'], produccion: ['#6B4E12', '#2E2108'] };
+function hacerFotos() {
+  try { const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setSize(256, 256); r.outputColorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x8070A0, 2.2)); const l = new THREE.DirectionalLight(0xFFE2B0, 2); l.position.set(1.5, 3, 4); sc.add(l);
+    const cam = new THREE.PerspectiveCamera(26, 1, 0.1, 50);
+    for (const a of EQ) { const m = mago(a), s = m.escala; m.raiz.rotation.y = -0.15; m.brazos[1].rotation.x = -0.5; sc.add(m.raiz);
+      const hy = 1.42 * s + 0.05; cam.position.set(0.3 * s, hy + 0.1 * s, 2.1 * s + 0.4); cam.lookAt(0, hy - 0.08 * s, 0); r.render(sc, cam);
+      const cv = document.createElement('canvas'); cv.width = cv.height = 256; const g = cv.getContext('2d'); const [c1, c2] = AREA_FONDO[a.area] || AREA_FONDO.direccion;
+      const gr = g.createRadialGradient(128, 100, 20, 128, 128, 180); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); g.drawImage(r.domElement, 0, 0);
+      FOTOS[a.slug] = cv.toDataURL('image/png'); sc.remove(m.raiz); }
+    r.dispose(); r.forceContextLoss?.();
+    $('#barraFoto').style.backgroundImage = `url(${FOTOS.coordinador})`; $('#tarjetaFoto').style.backgroundImage = `url(${FOTOS.coordinador})`;
+  } catch (err) { console.warn('No se pudieron generar las fotos', err); }
+}
+function foto(slug, chica = false) { const a = POR_SLUG[slug]; return FOTOS[slug] ? `<div class="foto${chica ? ' chica' : ''}" style="background-image:url(${FOTOS[slug]})"></div>` : `<div class="avatar">${esc(a.nombre[0])}</div>`; }
+hacerFotos();
+
+// ================================================================== cámara, pisos y clics
+const OFFSET = new THREE.Vector3(34, 30, 46);
+const CENTRO = new THREE.Vector3(0, 13, -34);
+controles.target.copy(CENTRO); camara.position.copy(CENTRO).add(OFFSET); camara.zoom = 0.74; camara.updateProjectionMatrix();
+let vuelo = null;
+function volarCamara(objetivo, zoom) { vuelo = { t: 0, de: controles.target.clone(), a: objetivo.clone(), z0: camara.zoom, z1: zoom }; }
+let pisoFoco = null;
+function enfocarPiso(p) { pisoFoco = p; volarCamara(mundo(p, 0, 0, 1.5), 1.75); refrescarPisos(); }
+function vistaCastillo() { pisoFoco = null; volarCamara(CENTRO, 0.74); refrescarPisos(); }
+const panelPisos = $('#pisos');
+const botonesPisos = [...PISOS].reverse().map(P => { const b = document.createElement('button'); b.innerHTML = `<b>${P.n}</b><span>${P.nombre}<small>${P.sub}</small></span><em></em>`; b.onclick = () => pisoFoco === P.n ? vistaCastillo() : enfocarPiso(P.n); panelPisos.appendChild(b); return { P, b }; });
+$('#bTodo').onclick = vistaCastillo;
+function refrescarPisos() {
+  const cuenta = [0, 0, 0, 0, 0]; for (const f of Object.values(FIG)) cuenta[pisoDe(f)]++;
+  for (const { P, b } of botonesPisos) { b.classList.toggle('on', pisoFoco === P.n); b.querySelector('em').textContent = cuenta[P.n] ? '👤 ' + cuenta[P.n] : ''; }
+  $('#bTodo').classList.toggle('on', pisoFoco === null);
+}
+refrescarPisos();
+const ray = new THREE.Raycaster(), puntero = new THREE.Vector2(); let abajo = null;
+lienzo.addEventListener('pointerdown', e => { abajo = { x: e.clientX, y: e.clientY }; });
+lienzo.addEventListener('pointerup', e => {
+  if (!abajo || Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 6) return; abajo = null;
+  puntero.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(puntero, camara);
+  const h = ray.intersectObjects(HITS, false)[0]; if (h) { pintarPerfil(h.object.userData.slug); return; }
+  const s = ray.intersectObjects(pisosClic, false)[0]; if (s) abrirSala(s.object.userData.sala);
+});
+const teclas = new Set();
+addEventListener('keydown', e => { if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return; teclas.add(e.key.toLowerCase());
+  if (/^[0-4]$/.test(e.key)) enfocarPiso(+e.key); if (e.key.toLowerCase() === 'c') vistaCastillo(); if (e.key === 'Escape') { cerrarPanel(); ocultarTarjeta(); } });
+addEventListener('keyup', e => teclas.delete(e.key.toLowerCase()));
+function moverConTeclado(dt) {
+  const adelante = controles.target.clone().sub(camara.position); adelante.y = 0; adelante.normalize(); const derecha = new THREE.Vector3(-adelante.z, 0, adelante.x);
+  const v = new THREE.Vector3(), vel = 18 * dt / camara.zoom;
+  if (teclas.has('w')) v.add(adelante); if (teclas.has('s')) v.sub(adelante); if (teclas.has('d')) v.add(derecha); if (teclas.has('a')) v.sub(derecha);
+  if (v.lengthSq()) { v.normalize().multiplyScalar(vel); controles.target.add(v); camara.position.add(v); }
+  const giro = (teclas.has('q') ? 1 : 0) - (teclas.has('e') ? 1 : 0); if (giro) { const off = camara.position.clone().sub(controles.target); off.applyAxisAngle(new THREE.Vector3(0, 1, 0), giro * dt * 1.2); camara.position.copy(controles.target).add(off); }
+}
+addEventListener('resize', () => { const asp = innerWidth / innerHeight; camara.left = -MEDIO * asp; camara.right = MEDIO * asp; camara.updateProjectionMatrix(); render.setSize(innerWidth, innerHeight); });
+
+// ================================================================== animación
+const reloj = new THREE.Clock(); const _v = new THREE.Vector3();
+function angulo(a, b, k) { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * k; }
+function animarFigura(f, dt, t) {
+  // movimiento por la ruta
+  const c = f.camino; let anda = false;
+  if (c && !f.enFlu) { const obj = c.pts[c.i], d = obj.clone().sub(f.pos), dist = d.length(), paso = c.vel * dt;
+    if (dist <= paso) { f.pos.copy(obj); c.i++; if (c.i >= c.pts.length) { f.camino = null; if (c.ryFinal != null) f.ryObj = c.ryFinal; c.alLlegar?.(); } }
+    else { f.pos.addScaledVector(d, paso / dist); if (Math.hypot(d.x, d.z) > 0.02) f.ryObj = Math.atan2(d.x, d.z); anda = true; } }
+  else if (f.modo === 'libre' && !f.enFlu && !(f.a.slug === 'coordinador' && visitando)) { f.espera -= dt; if (f.espera <= 0) { if (f.a.slug === 'coordinador' && Math.random() < 0.5) { const q = PUESTOS.coordinador; liberarSitio(f); caminarA(f, q, 0, 1.8, () => f.espera = 20 + Math.random() * 20); } else pasear(f); } }
+  f.ry = angulo(f.ry, f.ryObj, Math.min(1, dt * 8));
+  f.raiz.position.copy(f.pos); f.raiz.rotation.y = f.ry;
+  const [bi, bd] = f.brazos, s = situacion(f), trabaja = s === 'trabaja' && !anda;
+  if (anda) { const k = Math.sin(t * 9 + f.fase); f.cuerpo.position.y = Math.abs(k) * 0.05; bi.rotation.x = k * 0.5; bd.rotation.x = -k * 0.5; f.cuerpo.rotation.z = k * 0.03; f.cab.rotation.y = 0; }
+  else { f.cuerpo.position.y = Math.sin(t * 2 + f.fase) * 0.008; f.cuerpo.rotation.z = 0;
+    if (trabaja) { bd.rotation.x = -1.25 + Math.sin(t * 6 + f.fase) * 0.3; bd.rotation.z = Math.sin(t * 4 + f.fase) * 0.2; bi.rotation.x = -0.35; f.cab.rotation.y = Math.sin(t * 0.8 + f.fase) * 0.15;
+      f.chispaT -= dt; if (f.chispaT <= 0) { f.chispaT = 0.09; f.punta.getWorldPosition(_v); chispa(_v, COLOR_HECHIZO[f.estado] || 0xF3D98B, [0, 0.5, 0], 8, 0.9, 0.1); } }
+    else if (s === 'reunion' && performance.now() < f.habla) { bd.rotation.x = -0.6 + Math.sin(t * 5) * 0.3; bi.rotation.x = -0.3; f.cab.rotation.y = 0; }
+    else { bd.rotation.x *= 0.9; bd.rotation.z *= 0.9; bi.rotation.x *= 0.9; f.cab.rotation.y = Math.sin(t * 0.4 + f.fase) * 0.45; } }
+}
+function etiquetar() {
+  const lejos = camara.zoom < 1.15;
+  for (const f of Object.values(FIG)) { const e = f.etq;
+    if (!f.raiz.visible) { e.style.display = 'none'; continue; }
+    _v.copy(f.pos); _v.y += 2.05 * (f.escala || 1) + (POR_SLUG[f.a.slug].apariencia?.sombrero ? 0.45 : 0); _v.project(camara);
+    if (Math.abs(_v.x) > 1.1 || Math.abs(_v.y) > 1.1) { e.style.display = 'none'; continue; }
+    e.style.display = ''; e.style.left = (_v.x + 1) / 2 * innerWidth + 'px'; e.style.top = (1 - _v.y) / 2 * innerHeight + 'px';
+    e.classList.toggle('lejos', lejos); e.classList.toggle('habla', performance.now() < f.habla);
+    const s = situacion(f); e.querySelector('.punto').style.background = PUNTO[s][0]; e.style.zIndex = performance.now() < f.habla ? 5 : 1; }
+}
+let primero = true;
+function animar() {
+  requestAnimationFrame(animar);
+  const dt = Math.min(0.05, reloj.getDelta()), t = reloj.elapsedTime;
+  if (vuelo) { vuelo.t = Math.min(1, vuelo.t + dt / 1.1); const k = vuelo.t < 0.5 ? 2 * vuelo.t * vuelo.t : 1 - Math.pow(-2 * vuelo.t + 2, 2) / 2;
+    const off = camara.position.clone().sub(controles.target); controles.target.lerpVectors(vuelo.de, vuelo.a, k); camara.position.copy(controles.target).add(off);
+    camara.zoom = vuelo.z0 + (vuelo.z1 - vuelo.z0) * k; camara.updateProjectionMatrix(); if (vuelo.t >= 1) vuelo = null; }
+  moverConTeclado(dt); controles.update();
+  for (const f of Object.values(FIG)) animarFigura(f, dt, t);
+  animarVelas(t); animarParticulas(dt); animarLechuzas(dt, t);
+  const esc2 = camara.zoom * innerHeight / (2 * MEDIO) * 0.075 * Math.min(devicePixelRatio, 2); matL.uniforms.escala.value = esc2 * 4.2; matP.uniforms.escala.value = esc2 * 0.8;
+  for (const b of LIBROS_FLOTANTES) { b.position.y = b.userData.flota.y + Math.sin(t * 1.2 + b.userData.flota.f) * 0.12; b.rotation.y = t * 0.3 + b.userData.flota.f; }
+  if (window._orbe) window._orbe.scale.setScalar(1 + Math.sin(t * 2) * 0.08); if (window._globo) window._globo.rotation.y = t * 0.4;
+  if (window._fenix) window._fenix.rotation.y = Math.sin(t * 0.7) * 0.5; if (window._techo) window._techo.material.opacity = 0.65 + Math.sin(t * 0.8) * 0.2;
+  luzChimenea.intensity = 24 + Math.sin(t * 13) * 3 + Math.sin(t * 7.3) * 2; luzComedor.intensity = 38 + Math.sin(t * 9) * 2;
+  if (Math.random() < 0.3) { const c = CALDEROS[Math.random() * CALDEROS.length | 0]; chispa(c.pos, c.color, [0, 0.8, 0], 6, 1.2, 0.3); }
+  etiquetar(); render.render(escena, camara);
+  if (primero) { primero = false; setTimeout(() => { const c = $('#cargando'); c.style.opacity = 0; setTimeout(() => c.remove(), 700); }, 300); }
+}
+animar();
+refrescarMana();
+setTimeout(() => decir(FIG.coordinador, 'Bienvenido a Hogwarts IA. ¿En qué puedo ayudarte hoy?', 6000), 1800);
+</script>
+</body>
+</html>
