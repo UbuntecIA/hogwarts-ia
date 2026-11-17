@@ -31,7 +31,7 @@ Instalar Claude Code: <https://docs.claude.com/en/docs/claude-code/setup>
 ## 2. Descargarlo
 
 ```bash
-git clone https://github.com/<TU_USUARIO>/<TU_REPOSITORIO>.git "Hogwarts IA"
+git clone https://github.com/UbuntecIA/hogwarts-ia.git "Hogwarts IA"
 cd "Hogwarts IA"
 ```
 
