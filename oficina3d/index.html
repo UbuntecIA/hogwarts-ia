@@ -209,6 +209,16 @@
     #ayuda, #leyenda { display: none; } #modelo { width: 80px; } #barra .dumb { display: none; }
     #pisos button { min-width: 0; } #pisos button span { display: none; } #pisos { bottom: 92px; }
   }
+
+#avisoPublico { position: fixed; z-index: 60; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px));
+  background: linear-gradient(#2A1B0E, #1A1008); color: #F3E6C4; border: 1px solid #C9A227; border-radius: 14px; padding: 20px 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6); font: 15px/1.5 system-ui, sans-serif; }
+#avisoPublico .titulo { font: 600 19px Cinzel, serif; color: #E8C35A; display: block; margin-bottom: 6px; }
+#avisoPublico p { margin: 8px 0; }
+#avisoPublico .acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+#avisoPublico a, #avisoPublico button { flex: 1; text-align: center; padding: 10px 12px; border-radius: 9px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; }
+#avisoPublico a { background: #C9A227; color: #1A1008; border: 0; }
+#avisoPublico button { background: transparent; color: #F3E6C4; border: 1px solid #8A6D2A; }
 </style>
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }
@@ -1504,7 +1514,19 @@ setInterval(() => {
 }, 1000);
 
 // ================================================================== conexión con el servidor
+// versión pública (GitHub Pages u otro hosting): no hay servidor ni Claude, solo la demostración
+const PUBLICO = new URLSearchParams(location.search).has('publico') || (location.protocol !== 'file:' && !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname));
+function avisoPublico() {
+  const d = document.createElement('div'); d.id = 'avisoPublico';
+  d.innerHTML = `<div class="titulo">🪄 Demostración de Hogwarts IA</div><p>Aquí todo es una simulación: no hay ninguna cuenta de Claude conectada.
+    Toca <b>Ver demo</b> o escríbele algo a Dumbledore para ver cómo reparte las misiones.</p>
+    <p>Para usarlo de verdad, descarga el proyecto y conéctalo con <b>tu propia cuenta de Claude</b> (las instrucciones están en el README).</p>
+    <div class="acciones"><a href="https://github.com/UbuntecIA/hogwarts-ia" target="_blank" rel="noopener">Descargar en GitHub</a><button type="button">Explorar el castillo</button></div>`;
+  d.querySelector('button').onclick = () => d.remove();
+  document.body.appendChild(d);
+}
 function conectar() {
+  if (PUBLICO) { servidor = false; estadoTexto(); avisoPublico(); return; }
   if (location.protocol === 'file:') { servidor = false; estadoTexto(); return; }
   fetch('/estado').then(r => r.json()).then(e => {
     servidor = true; trabajando = !!e.trabajando; if (trabajando) inicioTrabajo = Date.now(); botones(); estadoTexto(); cargarTiempos(); cargarMagia();

@@ -11,6 +11,10 @@ gasta cada uno se muestran como **puntos de magia**.
 > Claude Code**, con **tu propia cuenta**. Este repositorio **no trae ninguna credencial**: cada
 > persona pone la suya (ver el paso 3).
 
+**👉 Mira la demostración en vivo (sin instalar nada, sin cuenta de Claude):
+<https://ubuntecia.github.io/hogwarts-ia/>**. Es una simulación: para que los agentes trabajen de
+verdad, descarga el proyecto y conéctalo con tu propia cuenta de Claude (pasos abajo).
+
 Manual de uso (pisos, personajes, reuniones, magia): [LEEME.md](LEEME.md).
 
 ---
